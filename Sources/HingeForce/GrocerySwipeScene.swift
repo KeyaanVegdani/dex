@@ -1,34 +1,30 @@
 import SwiftUI
 
-/// Reader back → credit card → slot front. Arrow under the reader along the swipe path.
+/// Reader back → credit card → slot front. Arrow shares the reader’s frame (aligned overlay).
 struct GrocerySwipeScene: View {
     let state: GrocerySwipeSceneState
     let size: CGSize
     let force: TrackpadForce
 
     var body: some View {
-        let readerSide = GrocerySwipe.readerSide(for: size)
+        let readerSize = GrocerySwipe.readerSize(for: size)
         let readerCenter = GrocerySwipe.readerCenter(for: size)
-        let cardWidth = readerSide * 0.30
+        let cardWidth = readerSize.width * 0.30
         let cardHeight = cardWidth * (322.0 / 236.0)
-        let cardCenter = GrocerySwipe.cardCenter(progress: state.progress,
-                                                 readerCenter: readerCenter,
-                                                 readerSide: readerSide)
-        let arrow = GrocerySwipe.arrowEndpoints(readerCenter: readerCenter, readerSide: readerSide)
+        let cardCenter = state.cardPoint
+            ?? GrocerySwipe.cardCenter(progress: state.progress,
+                                       readerCenter: readerCenter,
+                                       readerSize: readerSize)
         let arrowOpacity = GrocerySwipe.arrowOpacity(progress: state.progress)
         let showThankYou = state.isComplete
+        let arrowLocal = GrocerySwipe.arrowEndpointsInReaderFrame(readerSize: readerSize)
 
         ZStack {
-            // Full-scene drag pad — click-and-drag drives the card.
+            // Same frame + position as the reader — not a full-scene stretched stroke.
             if !showThankYou {
-                ForcePad(model: force)
-                    .frame(width: size.width, height: size.height)
-                    .contentShape(Rectangle())
-            }
-
-            // Arrow beneath the reader, along the slot path.
-            if !showThankYou {
-                SwipePathArrow(from: arrow.0, to: arrow.1)
+                SwipePathArrow(from: arrowLocal.0, to: arrowLocal.1)
+                    .frame(width: readerSize.width, height: readerSize.height)
+                    .position(readerCenter)
                     .opacity(arrowOpacity)
                     .allowsHitTesting(false)
             }
@@ -37,14 +33,14 @@ struct GrocerySwipeScene: View {
                 Image(nsImage: AppResources.image("reader-thank-you"))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: readerSide, height: readerSide)
+                    .frame(width: readerSize.width, height: readerSize.height)
                     .position(readerCenter)
                     .allowsHitTesting(false)
             } else {
                 Image(nsImage: AppResources.image("reader-idle"))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: readerSide, height: readerSide)
+                    .frame(width: readerSize.width, height: readerSize.height)
                     .position(readerCenter)
                     .allowsHitTesting(false)
 
@@ -56,21 +52,27 @@ struct GrocerySwipeScene: View {
                     .zIndex(1)
                     .allowsHitTesting(false)
 
-                // Same canvas as the reader — lip sits over the slot so the card reads “in” it.
                 Image(nsImage: AppResources.image("reader-slot-front"))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: readerSide, height: readerSide)
+                    .frame(width: readerSize.width, height: readerSize.height)
                     .position(readerCenter)
                     .zIndex(2)
                     .allowsHitTesting(false)
+            }
+
+            if !showThankYou {
+                ForcePad(model: force)
+                    .frame(width: size.width, height: size.height)
+                    .contentShape(Rectangle())
+                    .zIndex(10)
             }
         }
         .frame(width: size.width, height: size.height)
     }
 }
 
-/// Thin light-grey arrow at the swipe angle (~30° from vertical).
+/// Thin light-grey arrow drawn in the reader’s local frame (aspect-preserving, not scene-stretched).
 private struct SwipePathArrow: View {
     let from: CGPoint
     let to: CGPoint
@@ -86,9 +88,8 @@ private struct SwipePathArrow: View {
             let len = max(hypot(dx, dy), 1)
             let ux = dx / len
             let uy = dy / len
-            let head: CGFloat = 14
-            let wing: CGFloat = 7
-            // Perpendicular for the arrowhead wings.
+            let head: CGFloat = 12
+            let wing: CGFloat = 6
             let px = -uy
             let py = ux
             let tip = to
@@ -103,9 +104,9 @@ private struct SwipePathArrow: View {
 
             let color = Color(white: 0.72)
             context.stroke(shaft, with: .color(color),
-                           style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                           style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
             context.stroke(headPath, with: .color(color),
-                           style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                           style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
         }
         .allowsHitTesting(false)
     }
