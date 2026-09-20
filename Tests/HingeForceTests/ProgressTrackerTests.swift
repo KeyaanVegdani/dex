@@ -2,6 +2,10 @@ import XCTest
 @testable import HingeForce
 
 final class ProgressTrackerTests: XCTestCase {
+    func testPageTitleIsHistory() {
+        XCTAssertEqual(ProgressTrackerView.pageTitle, "History")
+    }
+
     func testMilestonesAreTomatoCakeThenNextUp() {
         XCTAssertEqual(ProgressMilestone.allCases.map(\.imageName), ["tomato", "cake", "next-up"])
     }
