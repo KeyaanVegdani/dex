@@ -30,7 +30,18 @@ struct RootView: View {
                     .id(lessonRun)
                     .transition(.opacity)
             case .progress:
-                ProgressTrackerView()
+                ProgressTrackerView(
+                    onReplayCake: {
+                        // Restart the cake story set from the blow-candles lesson.
+                        lessonRun += 1
+                        go(to: .lesson)
+                    },
+                    onReplayTomato: {
+                        // TODO: Grocery Day activity set isn’t implemented yet — return to Start
+                        // as the best available entry until that flow exists.
+                        go(to: .start)
+                    }
+                )
                     .transition(.opacity)
             }
         }

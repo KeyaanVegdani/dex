@@ -17,4 +17,17 @@ final class ProgressTrackerTests: XCTestCase {
         XCTAssertEqual(ProgressMilestone.cake.accessibilityLabel, "It’s Celebratin’ Time, Sep 20")
         XCTAssertEqual(ProgressMilestone.nextUp.accessibilityLabel, "Unlock Tomorrow, Sep 21")
     }
+
+    func testSideCardsTiltSixDegreesAwayFromCenter() {
+        XCTAssertEqual(ProgressTrackerView.rotationDegrees(relative: 0), 0)
+        XCTAssertEqual(ProgressTrackerView.rotationDegrees(relative: -1), 6)
+        XCTAssertEqual(ProgressTrackerView.rotationDegrees(relative: 1), -6)
+        XCTAssertEqual(ProgressTrackerView.rotationDegrees(relative: -2), 0)
+    }
+
+    func testReplayShowsForTomatoAndCakeButNotNextUp() {
+        XCTAssertTrue(ProgressTrackerView.showsReplay(for: .tomato))
+        XCTAssertTrue(ProgressTrackerView.showsReplay(for: .cake))
+        XCTAssertFalse(ProgressTrackerView.showsReplay(for: .nextUp))
+    }
 }
