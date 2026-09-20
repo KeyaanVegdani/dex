@@ -1,10 +1,13 @@
 import SwiftUI
 
-/// Past-activity Log: a three-card timeline (tomato → cake → next-up) with focus scrubbing.
+/// Past-activity History: a three-card timeline (tomato → cake → next-up) with focus scrubbing.
 /// The focused card is always centered on screen; earlier/later cards sit to its left/right.
 /// Date and title are baked into each card PNG — no separate caption under the carousel.
 struct ProgressTrackerView: View {
     @State private var focusedIndex = ProgressMilestone.cake.rawValue
+
+    /// Visible page title (was “Log”).
+    static let pageTitle = "History"
 
     /// Dex logo → back to Home (same asset / corner placement as HomeView).
     var onHome: () -> Void = {}
@@ -43,10 +46,11 @@ struct ProgressTrackerView: View {
                 .offset(x: 34, y: 40)
                 .accessibilityLabel("Home")
 
-                Text("Log")
+                Text(Self.pageTitle)
                     .font(Theme.headingFont)
                     .foregroundStyle(Theme.title)
                     .position(x: centerX, y: titleY)
+                    .accessibilityAddTraits(.isHeader)
 
                 ForEach(milestones) { milestone in
                     let relative = milestone.rawValue - focusedIndex

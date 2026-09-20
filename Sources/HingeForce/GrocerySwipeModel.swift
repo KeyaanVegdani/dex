@@ -10,7 +10,7 @@ struct GrocerySwipeSceneState: Equatable {
     var completionElapsed: Double?
 }
 
-/// Drives swipe-to-pay: tilt MacBook down → play bundled swipe video → Finish → Log.
+/// Drives swipe-to-pay: tilt MacBook down → play bundled swipe video → Finish → History.
 @MainActor
 final class GrocerySwipeModel: ObservableObject {
     private static let frameInterval: TimeInterval = 1.0 / 60.0

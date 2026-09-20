@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Grocery Day step 4: tilt the MacBook down to play the swipe video, then Finish → Log.
+/// Grocery Day step 4: tilt the MacBook down to play the swipe video, then Finish → History.
 struct GrocerySwipeLessonView: View {
     @StateObject private var model: GrocerySwipeModel
     @ObservedObject private var accelerometer: Accelerometer
