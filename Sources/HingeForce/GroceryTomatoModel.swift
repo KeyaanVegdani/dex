@@ -7,6 +7,8 @@ struct GroceryTomatoSceneState: Equatable {
     var phase = GroceryTomatoPhase.squishing
     /// Seconds since a good squish (nil until then).
     var completionElapsed: Double?
+    /// Dent position in the tomato frame, normalized 0...1 top-left origin; nil when not pressing.
+    var dentNorm: CGPoint?
 }
 
 /// Runs the tomato-squish lesson: too soft / good / too hard from Force Touch.
@@ -20,7 +22,6 @@ final class GroceryTomatoModel: ObservableObject {
 
     let force: TrackpadForce
     private var displayedReading = 1.0
-    /// Peak reading during the current press (resets on release/reset).
     private var peakReading = 1.0
     private var wasPressed = false
     private var startedAt = Date()
@@ -48,14 +49,14 @@ final class GroceryTomatoModel: ObservableObject {
         force.release()
     }
 
-    /// Reset to the start of this tomato sequence.
     func getAnother() {
         force.release()
         displayedReading = 1.0
         peakReading = 1.0
         wasPressed = false
         completedAt = nil
-        scene = GroceryTomatoSceneState(time: scene.time, depth: 0, phase: .squishing, completionElapsed: nil)
+        scene = GroceryTomatoSceneState(time: scene.time, depth: 0, phase: .squishing,
+                                        completionElapsed: nil, dentNorm: nil)
     }
 
     private func tick() {
@@ -68,12 +69,14 @@ final class GroceryTomatoModel: ObservableObject {
 
         switch state.phase {
         case .tooSoft, .tooHard:
+            state.dentNorm = nil
             scene = state
             return
         case .good:
             if let completedAt {
                 state.completionElapsed = now.timeIntervalSince(completedAt)
             }
+            state.dentNorm = force.locationNorm ?? state.dentNorm
             scene = state
             return
         case .squishing:
@@ -85,6 +88,7 @@ final class GroceryTomatoModel: ObservableObject {
         let tau = reading > displayedReading ? Self.pressSmoothing : Self.releaseSmoothing
         displayedReading += (reading - displayedReading) * (1 - exp(-dt / tau))
         state.depth = GroceryTomato.depth(forReading: displayedReading)
+        state.dentNorm = pressed ? force.locationNorm : nil
 
         guard state.time >= LessonIntro.duration * 0.5 else {
             scene = state
@@ -99,15 +103,16 @@ final class GroceryTomatoModel: ObservableObject {
                 force.release()
                 state.phase = .tooHard
                 state.depth = GroceryTomato.depth(forReading: GroceryTomato.hardMax)
+                state.dentNorm = nil
                 scene = state
                 return
             }
         } else if wasPressed {
-            // Released after a press — resolve too-soft vs good from peak.
             wasPressed = false
             if peakReading < GroceryTomato.firmMin {
                 state.phase = .tooSoft
                 state.depth = 0
+                state.dentNorm = nil
             } else if peakReading < GroceryTomato.hardMax {
                 completedAt = now
                 state.phase = .good

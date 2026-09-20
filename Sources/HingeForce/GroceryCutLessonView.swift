@@ -17,19 +17,22 @@ struct GroceryCutLessonView: View {
         let burst = phase.isBurst
         let good = phase == .good
 
+        // No small PillButton variant exists — keep the standard pill and stack heading above it
+        // with clear spacing so they never overlap (see tomato-button-overlap-bug).
         LessonScaffold(currentSegment: 1,
                        introTime: model.scene.time,
                        outroElapsed: good ? model.scene.completionElapsed : nil,
-                       title: title(for: phase),
-                       subtitle: burst ? " " : (good ? " " : GroceryTomato.subtitleSquish),
+                       title: burst ? "" : title(for: phase),
+                       subtitle: burst || good ? "" : GroceryTomato.subtitleSquish,
                        continueStart: GroceryTomato.continueStart,
                        contentAllowsHits: phase == .squishing,
                        onContinue: onContinue) { size in
             let side = min(size.width * 0.34, size.height * 0.42, 320)
             ZStack {
                 if phase == .squishing {
+                    // Same frame as the tomato art so locationNorm maps 1:1 onto the dent.
                     ForcePad(model: force)
-                        .frame(width: side * 0.92, height: side * 0.78)
+                        .frame(width: side, height: side)
                         .contentShape(Ellipse())
                 }
 
@@ -40,13 +43,17 @@ struct GroceryCutLessonView: View {
         }
         .overlay {
             if burst {
-                VStack {
+                VStack(spacing: 28) {
                     Spacer()
-                    // Subheading replaced by the reset pill (Jane’s exact label).
+                    Text(title(for: phase))
+                        .font(Theme.headingFont)
+                        .foregroundStyle(Theme.title)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                     PillButton(title: GroceryTomato.getAnotherTitle, style: .secondary) {
                         model.getAnother()
                     }
-                    .padding(.bottom, 90)
+                    .padding(.bottom, 56)
                 }
                 .transition(.opacity)
             }
