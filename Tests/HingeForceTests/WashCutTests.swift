@@ -312,4 +312,25 @@ final class AccelerometerMathTests: XCTestCase {
             XCTAssertEqual(AccelerometerMath.rollDegrees(x: 0, y: sin(r), z: -cos(r)), 0, accuracy: 1e-9)
         }
     }
+
+    func testLevelLaptopHasNoPitch() {
+        XCTAssertEqual(AccelerometerMath.pitchDegrees(x: 0, y: 0, z: -1), 0, accuracy: 1e-9)
+        let g = AccelerometerMath.gravity(fromReport: flatReport)!
+        XCTAssertEqual(AccelerometerMath.pitchDegrees(x: g.x, y: g.y, z: g.z), 0, accuracy: 0.5)
+    }
+
+    func testPitchFollowsForwardBackTilt() {
+        for degrees in [5.0, 15, 30, 45] {
+            let r = degrees * .pi / 180
+            XCTAssertEqual(AccelerometerMath.pitchDegrees(x: 0, y: sin(r), z: -cos(r)), degrees, accuracy: 1e-6)
+            XCTAssertEqual(AccelerometerMath.pitchDegrees(x: 0, y: -sin(r), z: -cos(r)), -degrees, accuracy: 1e-6)
+        }
+    }
+
+    func testRollingSidewaysDoesNotCountAsPitch() {
+        for degrees in [10.0, 25, 40] {
+            let r = degrees * .pi / 180
+            XCTAssertEqual(AccelerometerMath.pitchDegrees(x: sin(r), y: 0, z: -cos(r)), 0, accuracy: 1e-9)
+        }
+    }
 }

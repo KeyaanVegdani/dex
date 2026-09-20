@@ -23,7 +23,24 @@ struct PillButton: View {
     }
 }
 
-private struct PressableButtonStyle: ButtonStyle {
+/// Circular control that reuses the secondary pill chrome (grey fill, dark glyph, press scale).
+struct PillCircleButton: View {
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Theme.pillText)
+                .frame(width: 56, height: 56)
+                .background(Theme.pill, in: Circle())
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
+}
+
+struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .modifier(HoverSound())

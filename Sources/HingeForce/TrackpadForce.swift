@@ -20,17 +20,20 @@ final class TrackpadForce: ObservableObject {
     @Published private(set) var stage: Int = 0
     @Published private(set) var peak: Float = 0
     @Published private(set) var isPressed = false
+    /// Press location in the ForcePad, normalized 0...1 with origin at the top-left (SwiftUI space).
+    @Published private(set) var locationNorm: CGPoint?
 
     private var pressStart: TimeInterval?
 
     /// `pressure_reading`: settled pressure mapped onto 1...10 (1 when not pressing).
     var pressureReading: Double { ReadingMap.pressure(pressure) }
 
-    func begin(at timestamp: TimeInterval) {
+    func begin(at timestamp: TimeInterval, locationNorm: CGPoint? = nil) {
         pressStart = timestamp
         pressure = 0
         stage = 0
         isPressed = true
+        self.locationNorm = locationNorm.map(Self.clampUnit)
     }
 
     func update(from event: NSEvent) {
@@ -41,15 +44,26 @@ final class TrackpadForce: ObservableObject {
         peak = max(peak, event.pressure)
     }
 
+    /// Update the normalized press point while dragging (still top-left origin).
+    func move(locationNorm: CGPoint) {
+        guard isPressed else { return }
+        self.locationNorm = Self.clampUnit(locationNorm)
+    }
+
     func release() {
         pressStart = nil
         pressure = 0
         stage = 0
         isPressed = false
+        locationNorm = nil
     }
 
     func resetPeak() {
         peak = pressure
+    }
+
+    private static func clampUnit(_ p: CGPoint) -> CGPoint {
+        CGPoint(x: min(max(p.x, 0), 1), y: min(max(p.y, 0), 1))
     }
 }
 
@@ -75,7 +89,28 @@ final class ForcePadView: NSView {
     override var mouseDownCanMoveWindow: Bool { false }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    override func mouseDown(with event: NSEvent) { model?.begin(at: event.timestamp) }
-    override func pressureChange(with event: NSEvent) { model?.update(from: event) }
+    override func mouseDown(with event: NSEvent) {
+        model?.begin(at: event.timestamp, locationNorm: normalized(from: event))
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        model?.move(locationNorm: normalized(from: event))
+        // Some trackpads keep sending pressure with drag.
+        model?.update(from: event)
+    }
+
+    override func pressureChange(with event: NSEvent) {
+        model?.update(from: event)
+        model?.move(locationNorm: normalized(from: event))
+    }
+
     override func mouseUp(with event: NSEvent) { model?.release() }
+
+    /// NSView coords are bottom-left; convert to top-left unit space for SwiftUI overlays.
+    private func normalized(from event: NSEvent) -> CGPoint {
+        let p = convert(event.locationInWindow, from: nil)
+        let w = max(bounds.width, 1)
+        let h = max(bounds.height, 1)
+        return CGPoint(x: p.x / w, y: 1 - p.y / h)
+    }
 }

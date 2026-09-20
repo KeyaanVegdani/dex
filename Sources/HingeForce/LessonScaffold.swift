@@ -56,7 +56,7 @@ struct LessonScaffold<Content: View>: View {
     private var caption: some View {
         VStack(spacing: 12) {
             Text(title)
-                .font(.system(size: 40, weight: .bold))
+                .font(Theme.headingFont)
                 .foregroundStyle(Theme.title)
             Text(subtitle)
                 .font(.system(size: 22))

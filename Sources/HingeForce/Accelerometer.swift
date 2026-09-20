@@ -21,6 +21,13 @@ enum AccelerometerMath {
     static func rollDegrees(x: Double, y: Double, z: Double) -> Double {
         atan2(x, hypot(y, z)) * 180 / .pi
     }
+
+    /// How far the laptop is tipped forward/back, in degrees. Zero when it lies flat;
+    /// positive when the reading's y axis points down (tipping along the pitch axis).
+    /// Rolling sideways doesn't change it.
+    static func pitchDegrees(x: Double, y: Double, z: Double) -> Double {
+        atan2(y, hypot(x, z)) * 180 / .pi
+    }
 }
 
 /// Reads the built-in accelerometer of Apple Silicon MacBooks.
@@ -43,6 +50,9 @@ final class Accelerometer: ObservableObject {
 
     /// Laptop roll in degrees (see `AccelerometerMath.rollDegrees`), or nil before the first reading.
     var rollDegrees: Double? { gravity.map { AccelerometerMath.rollDegrees(x: $0.x, y: $0.y, z: $0.z) } }
+
+    /// Laptop pitch in degrees (see `AccelerometerMath.pitchDegrees`), or nil before the first reading.
+    var pitchDegrees: Double? { gravity.map { AccelerometerMath.pitchDegrees(x: $0.x, y: $0.y, z: $0.z) } }
 
     private var manager: IOHIDManager?
     private var device: IOHIDDevice?

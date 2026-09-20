@@ -44,6 +44,11 @@ struct LessonView: View {
                    subtitle: subtitle,
                    subtitleIsProblem: isProblem,
                    onContinue: onContinue)
+            .overlay(alignment: .topTrailing) {
+                // Testing affordance: jump past blow-out to the cut lesson.
+                PillButton(title: "Skip", style: .secondary, action: onContinue)
+                    .padding(24)
+            }
             .overlay(alignment: .bottomLeading) { micReadout.padding(20) }
             .onAppear { model.start() }
             .onDisappear {
