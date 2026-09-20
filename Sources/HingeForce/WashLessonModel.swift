@@ -39,6 +39,7 @@ final class WashLessonModel: ObservableObject {
         timer?.invalidate()
         timer = nil
         accelerometer.stop()
+        SoundEffects.shared.stopAmbient(.shower)
     }
 
     private func tick() {
@@ -54,6 +55,7 @@ final class WashLessonModel: ObservableObject {
             if tracker.isComplete {
                 completedAt = now
                 isComplete = true
+                SoundEffects.shared.play(.lessonFinished)
             }
         }
 
@@ -63,6 +65,11 @@ final class WashLessonModel: ObservableObject {
         state.washed = tracker.washed
         state.completionElapsed = completedAt.map { now.timeIntervalSince($0) }
         scene = state
+
+        // A soft shower for as long as water is running, slightly brighter the more the shower is swung.
+        SoundEffects.shared.setAmbient(.shower,
+                                       level: ShowerSoundLevel.level(streamOpacity: WashCut.streamOpacity(elapsed: state.completionElapsed)),
+                                       tone: abs(state.swing) / WashCut.maxSwing)
 
         tickCount += 1
         if tickCount % 15 == 0, let g = accelerometer.gravity {

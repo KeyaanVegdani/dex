@@ -90,7 +90,7 @@ struct HomePage: View {
                 .contentShape(Rectangle())
                 .rotationEffect(.degrees(HomeMotion.bookAngle(activeTime: clock.activeTime)), anchor: .bottom)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SoundPlainButtonStyle())
             .scaleEffect(isHoveringBook ? HomeMotion.hoverScale : 1)
             .offset(y: isHoveringBook ? -HomeMotion.hoverLift * layout.unit : 0)
             .animation(.spring(response: 0.4, dampingFraction: 0.68), value: isHoveringBook)
@@ -119,7 +119,7 @@ struct HomePage: View {
                     .padding(8)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SoundPlainButtonStyle())
             .position(x: layout.size.width - 34 - 30, y: 56)
         }
     }
@@ -146,6 +146,7 @@ private struct HomePressStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .modifier(PressSound(isPressed: configuration.isPressed))
     }
 }
 
@@ -208,7 +209,7 @@ struct BlankPage: View {
                 .padding(10)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SoundPlainButtonStyle())
             .padding(.leading, 26)
             .padding(.top, 34)
         }

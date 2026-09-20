@@ -48,6 +48,9 @@ final class LidAngleSensor: ObservableObject {
         if let manager { IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone)) }
         device = nil
         manager = nil
+        // Forget the old reading, so the next start begins fresh.
+        angle = nil
+        status = .searching
     }
 
     func resetObservedRange() {

@@ -40,6 +40,7 @@ final class LessonModel: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        SoundEffects.shared.stopAmbient(.candles)
     }
 
     private func tick() {
@@ -67,9 +68,19 @@ final class LessonModel: ObservableObject {
                 bendAtBlowOut = state.bend
                 state.blowOutElapsed = 0
                 isComplete = true
+                SoundEffects.shared.play(.partFinished)
             }
         }
         scene = state
+
+        // The candles crackle softly while they burn: quiet at first, coming up as the flames light, more turbulent as
+        // they are blown, and gone when they go out.
+        let flames = LessonIntro.cake(at: state.time).flameScale
+        let lit = flames.reduce(0, +) / Double(flames.count)
+        SoundEffects.shared.setAmbient(.candles,
+                                       level: CandleSoundLevel.level(lit: lit, blowOutElapsed: state.blowOutElapsed),
+                                       tone: state.bend)
+
         tickCount += 1
         if tickCount % 30 == 0 {
             DebugLog.write(String(format: "lesson t=%.2f micReading=%.2f bend=%.2f hold=%.2f status=%@ out=%d", state.time, reading, state.bend, state.holdProgress, "\(mic.status)", isComplete ? 1 : 0))

@@ -26,5 +26,6 @@ private struct PressableButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .modifier(PressSound(isPressed: configuration.isPressed))
     }
 }

@@ -21,7 +21,7 @@ struct RootView: View {
                          onHistory: { go(to: .history) })
                     .transition(.opacity)
             case .testing:
-                BlankPage(title: "Test System") { go(to: .home) }
+                TestSystemView(lid: lid, mic: mic, force: force, accelerometer: accelerometer) { go(to: .home) }
                     .transition(.opacity)
             case .history:
                 BlankPage(title: "History") { go(to: .home) }
@@ -54,6 +54,7 @@ struct RootView: View {
         .background(Theme.background)
         .environment(\.pageTransition, transition.state)
         .background(WindowSizer())
+        .onAppear { SoundEffects.shared.prepare() }
         .preferredColorScheme(.light)
     }
 }
