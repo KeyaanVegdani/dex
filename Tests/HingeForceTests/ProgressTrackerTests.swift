@@ -31,3 +31,10 @@ final class ProgressTrackerTests: XCTestCase {
         XCTAssertFalse(ProgressTrackerView.showsReplay(for: .nextUp))
     }
 }
+
+final class GroceryActivitySetTests: XCTestCase {
+    func testGrocerySetHasFourStepsMatchingCakeScaffold() {
+        XCTAssertEqual(GroceryActivitySet.Step.allCases.map(\.rawValue), [0, 1, 2, 3])
+        XCTAssertEqual(GroceryActivitySet.displayName, "Grocery Day")
+    }
+}

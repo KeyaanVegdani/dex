@@ -1,15 +1,24 @@
 import SwiftUI
 
 struct RootView: View {
-    private enum Page { case home, testing, history, lesson, cut, press, wash, progress }
+    private enum Page {
+        case home, testing, history
+        // Cake story set
+        case lesson, cut, press, wash
+        // Grocery Day story set (parallel scaffold — see GroceryActivitySet)
+        case groceryLesson, groceryCut, groceryPress, groceryWash
+        case progress
+    }
 
     @ObservedObject var mic: MicMonitor
     @ObservedObject var lid: LidAngleSensor
     @ObservedObject var force: TrackpadForce
     @ObservedObject var accelerometer: Accelerometer
     @State private var page: Page = .home
-    /// Bumped to give the lessons a fresh start (new intro, new timers, a new cut line) when redone.
+    /// Bumped to give the cake lessons a fresh start when redone.
     @State private var lessonRun = 0
+    /// Bumped to give the Grocery Day lessons a fresh start when redone.
+    @State private var groceryRun = 0
     @StateObject private var transition = PageTransitionDriver()
 
     var body: some View {
@@ -26,17 +35,17 @@ struct RootView: View {
             case .history, .progress:
                 ProgressTrackerView(
                     onReplayCake: {
-                        // Restart the cake story set from the blow-candles lesson.
                         lessonRun += 1
                         go(to: .lesson)
                     },
                     onReplayTomato: {
-                        // TODO: Grocery Day activity set isn’t implemented yet — return Home
-                        // as the best available entry until that flow exists.
-                        go(to: .home)
+                        groceryRun += 1
+                        go(to: .groceryLesson)
                     }
                 )
                 .transition(.opacity)
+
+            // MARK: Cake set
             case .lesson:
                 LessonView(mic: mic) { stretch(to: .cut) }
                     .id(lessonRun)
@@ -52,6 +61,24 @@ struct RootView: View {
             case .wash:
                 WashLessonView(accelerometer: accelerometer) { go(to: .progress) }
                     .id(lessonRun)
+                    .transition(.opacity)
+
+            // MARK: Grocery Day set — swap Grocery*LessonView contents later; keep this chain.
+            case .groceryLesson:
+                GroceryLessonView(mic: mic) { stretch(to: .groceryCut) }
+                    .id(groceryRun)
+                    .transition(.opacity)
+            case .groceryCut:
+                GroceryCutLessonView(lid: lid) { stretch(to: .groceryPress) }
+                    .id(groceryRun)
+                    .transition(.opacity)
+            case .groceryPress:
+                GroceryPressLessonView(force: force) { stretch(to: .groceryWash) }
+                    .id(groceryRun)
+                    .transition(.opacity)
+            case .groceryWash:
+                GroceryWashLessonView(accelerometer: accelerometer) { go(to: .progress) }
+                    .id(groceryRun)
                     .transition(.opacity)
             }
         }
