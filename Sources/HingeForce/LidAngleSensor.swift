@@ -22,6 +22,9 @@ final class LidAngleSensor: ObservableObject {
     @Published private(set) var maxSeen: Double?
     @Published private(set) var status: Status = .searching
 
+    /// `hinge_reading`: the angle mapped through `ReadingMap.hinge` (0...100).
+    var hingeReading: Double? { angle.map(ReadingMap.hinge(angle:)) }
+
     private var manager: IOHIDManager?
     private var device: IOHIDDevice?
     private var timer: Timer?

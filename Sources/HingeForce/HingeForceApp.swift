@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct HingeForceApp: App {
+    @StateObject private var mic = MicMonitor()
     @StateObject private var lid = LidAngleSensor()
     @StateObject private var force = TrackpadForce()
 
@@ -13,9 +14,9 @@ struct HingeForceApp: App {
 
     var body: some Scene {
         Window("Hinge & Force", id: "main") {
-            ContentView(lid: lid, force: force)
-                .onAppear { lid.start() }
+            RootView(mic: mic, lid: lid, force: force)
         }
-        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(NSScreen.main?.visibleFrame.size ?? CGSize(width: 1280, height: 800))
     }
 }
