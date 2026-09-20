@@ -2,12 +2,11 @@ import SwiftUI
 
 /// Post-cake story log: a three-card timeline (tomato → cake → next-up) with focus scrubbing.
 /// The focused card is always centered on screen; earlier/later cards sit to its left/right.
+/// Date and title are baked into each card PNG — no separate caption under the carousel.
 struct ProgressTrackerView: View {
     @State private var focusedIndex = ProgressMilestone.cake.rawValue
 
     private let milestones = ProgressMilestone.allCases
-    /// Shared by every card so side tiles don’t look rounder/sharper than the center.
-    private static let cornerRadius: CGFloat = 36
     private static let scrubSpring = Animation.spring(response: 0.38, dampingFraction: 0.82)
 
     var body: some View {
@@ -17,9 +16,7 @@ struct ProgressTrackerView: View {
             let buttonGap: CGFloat = 76
             let pitch = focusedSide + buttonGap
             let centerX = geo.size.width / 2
-            // Sit the row a bit above true center so the date label can clear below.
-            let cardY = geo.size.height * 0.46
-            let dateY = cardY + focusedSide * 0.5 + 48
+            let cardY = geo.size.height * 0.5
 
             ZStack {
                 Theme.background
@@ -46,30 +43,17 @@ struct ProgressTrackerView: View {
                     moveFocus(by: 1)
                 }
                 .position(x: centerX + pitch / 2, y: cardY)
-
-                Text(milestones[focusedIndex].dateLabel)
-                    .font(Theme.headingFont)
-                    .foregroundStyle(Theme.title)
-                    .multilineTextAlignment(.center)
-                    .position(x: centerX, y: dateY)
-                    .animation(.easeInOut(duration: 0.22), value: focusedIndex)
-                    .id(focusedIndex)
             }
             .animation(Self.scrubSpring, value: focusedIndex)
         }
     }
 
     private func card(for milestone: ProgressMilestone, side: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-        let inset = milestone.imageInset * (side / 280)
-
-        return Image(nsImage: AppResources.image(milestone.imageName))
+        // Full card art already includes corner radius, date pill, and title.
+        Image(nsImage: AppResources.image(milestone.imageName))
             .resizable()
             .scaledToFit()
-            .padding(inset)
             .frame(width: side, height: side)
-            .background(milestone.background, in: shape)
-            .clipShape(shape)
             .accessibilityLabel(milestone.accessibilityLabel)
     }
 
@@ -104,31 +88,20 @@ enum ProgressMilestone: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// All three milestone PNGs are full square tiles.
-    var imageInset: CGFloat { 0 }
-
-    var background: Color {
+    /// Titles baked into the card art (for a11y / tests — not drawn separately).
+    var title: String {
         switch self {
-        case .tomato: return Theme.tomatoCard
-        case .cake: return Theme.cakeCard
-        case .nextUp: return Theme.nextCard
-        }
-    }
-
-    /// Tomato is the day before cake; next-up stays open-ended in product voice.
-    var dateLabel: String {
-        switch self {
-        case .tomato: return "September 19"
-        case .cake: return "September 20"
-        case .nextUp: return "Unlock tomorrow"
+        case .tomato: return "Grocery Day"
+        case .cake: return "It’s Celebratin’ Time"
+        case .nextUp: return "Unlock Tomorrow"
         }
     }
 
     var accessibilityLabel: String {
         switch self {
-        case .tomato: return "Tomato lesson, September 19"
-        case .cake: return "Cake lesson, September 20"
-        case .nextUp: return "Next lesson, Unlock tomorrow"
+        case .tomato: return "Grocery Day, Sep 19"
+        case .cake: return "It’s Celebratin’ Time, Sep 20"
+        case .nextUp: return "Unlock Tomorrow, Sep 21"
         }
     }
 }

@@ -6,15 +6,15 @@ final class ProgressTrackerTests: XCTestCase {
         XCTAssertEqual(ProgressMilestone.allCases.map(\.imageName), ["tomato", "cake", "next-up"])
     }
 
-    func testCakeDateIsSeptember20() {
-        XCTAssertEqual(ProgressMilestone.cake.dateLabel, "September 20")
+    func testCardTitlesMatchBakedInArt() {
+        XCTAssertEqual(ProgressMilestone.tomato.title, "Grocery Day")
+        XCTAssertEqual(ProgressMilestone.cake.title, "It’s Celebratin’ Time")
+        XCTAssertEqual(ProgressMilestone.nextUp.title, "Unlock Tomorrow")
     }
 
-    func testTomatoIsDayBeforeCake() {
-        XCTAssertEqual(ProgressMilestone.tomato.dateLabel, "September 19")
-    }
-
-    func testNextUpUsesUnlockTomorrow() {
-        XCTAssertEqual(ProgressMilestone.nextUp.dateLabel, "Unlock tomorrow")
+    func testAccessibilityLabelsIncludeTitleAndDate() {
+        XCTAssertEqual(ProgressMilestone.tomato.accessibilityLabel, "Grocery Day, Sep 19")
+        XCTAssertEqual(ProgressMilestone.cake.accessibilityLabel, "It’s Celebratin’ Time, Sep 20")
+        XCTAssertEqual(ProgressMilestone.nextUp.accessibilityLabel, "Unlock Tomorrow, Sep 21")
     }
 }
