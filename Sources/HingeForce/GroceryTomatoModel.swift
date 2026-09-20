@@ -1,21 +1,15 @@
 import Foundation
 
-enum GroceryTomatoPhase: Equatable {
-    case squishing
-    case broken
-    case succeeded
-}
-
 struct GroceryTomatoSceneState: Equatable {
     var time = 0.0
-    /// Smoothed press depth 0...1.
+    /// Smoothed press depth 0...1 (drives dent only).
     var depth = 0.0
     var phase = GroceryTomatoPhase.squishing
-    /// Seconds since gentle success (nil until then).
+    /// Seconds since a good squish (nil until then).
     var completionElapsed: Double?
 }
 
-/// Runs the tomato-squish lesson from Force Touch pressure.
+/// Runs the tomato-squish lesson: too soft / good / too hard from Force Touch.
 @MainActor
 final class GroceryTomatoModel: ObservableObject {
     static let pressSmoothing: TimeInterval = 0.04
@@ -25,8 +19,10 @@ final class GroceryTomatoModel: ObservableObject {
     @Published private(set) var scene = GroceryTomatoSceneState()
 
     let force: TrackpadForce
-    private var tracker = TomatoSquishTracker()
     private var displayedReading = 1.0
+    /// Peak reading during the current press (resets on release/reset).
+    private var peakReading = 1.0
+    private var wasPressed = false
     private var startedAt = Date()
     private var lastTick = Date()
     private var completedAt: Date?
@@ -52,11 +48,12 @@ final class GroceryTomatoModel: ObservableObject {
         force.release()
     }
 
-    /// Broken-state reset: new tomato, clear pressure.
-    func pickAnother() {
+    /// Reset to the start of this tomato sequence.
+    func getAnother() {
         force.release()
-        tracker.reset()
         displayedReading = 1.0
+        peakReading = 1.0
+        wasPressed = false
         completedAt = nil
         scene = GroceryTomatoSceneState(time: scene.time, depth: 0, phase: .squishing, completionElapsed: nil)
     }
@@ -70,11 +67,10 @@ final class GroceryTomatoModel: ObservableObject {
         state.time = now.timeIntervalSince(startedAt)
 
         switch state.phase {
-        case .broken:
-            state.depth = 0
+        case .tooSoft, .tooHard:
             scene = state
             return
-        case .succeeded:
+        case .good:
             if let completedAt {
                 state.completionElapsed = now.timeIntervalSince(completedAt)
             }
@@ -85,30 +81,43 @@ final class GroceryTomatoModel: ObservableObject {
         }
 
         let reading = force.pressureReading
+        let pressed = force.isPressed
         let tau = reading > displayedReading ? Self.pressSmoothing : Self.releaseSmoothing
         displayedReading += (reading - displayedReading) * (1 - exp(-dt / tau))
         state.depth = GroceryTomato.depth(forReading: displayedReading)
 
-        // Ignore force until the scaffold intro has settled a bit.
         guard state.time >= LessonIntro.duration * 0.5 else {
             scene = state
             return
         }
 
-        if GroceryTomato.isBroken(reading: reading) {
-            force.release()
-            state.phase = .broken
-            state.depth = 1
-            scene = state
-            return
+        if pressed {
+            peakReading = max(peakReading, reading)
+            wasPressed = true
+
+            if GroceryTomato.isTooHard(reading: reading) {
+                force.release()
+                state.phase = .tooHard
+                state.depth = GroceryTomato.depth(forReading: GroceryTomato.hardMax)
+                scene = state
+                return
+            }
+        } else if wasPressed {
+            // Released after a press — resolve too-soft vs good from peak.
+            wasPressed = false
+            if peakReading < GroceryTomato.firmMin {
+                state.phase = .tooSoft
+                state.depth = 0
+            } else if peakReading < GroceryTomato.hardMax {
+                completedAt = now
+                state.phase = .good
+                state.completionElapsed = 0
+                state.depth = GroceryTomato.depth(forReading: peakReading)
+            }
+            peakReading = 1.0
+            displayedReading = 1.0
         }
 
-        tracker.update(reading: reading, dt: dt)
-        if tracker.isComplete {
-            completedAt = now
-            state.phase = .succeeded
-            state.completionElapsed = 0
-        }
         scene = state
     }
 }

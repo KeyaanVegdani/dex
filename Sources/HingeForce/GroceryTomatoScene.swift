@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Whole / dent / broken tomato layered for the squish lesson.
+/// Whole / dent / broken tomato. Dent intensifies with pressure; the tomato body color stays fixed.
 struct GroceryTomatoScene: View {
     let state: GroceryTomatoSceneState
     let side: CGFloat
 
     var body: some View {
         ZStack {
-            if state.phase == .broken {
+            if state.phase.isBurst {
                 Image(nsImage: AppResources.image("tomato-broken"))
                     .resizable()
                     .scaledToFit()
@@ -17,14 +17,13 @@ struct GroceryTomatoScene: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: side, height: side)
-                    .brightness(GroceryTomato.darken(depth: state.depth))
 
                 Image(nsImage: AppResources.image("dent"))
                     .resizable()
                     .scaledToFit()
                     .frame(width: side * 0.28, height: side * 0.32)
                     .opacity(GroceryTomato.dentOpacity(depth: state.depth))
-                    // Sit on the body (slightly right of center), matching the dent mockup.
+                    .brightness(GroceryTomato.dentBrightness(depth: state.depth))
                     .offset(x: side * 0.06, y: side * 0.04)
             }
         }
