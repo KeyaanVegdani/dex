@@ -15,6 +15,6 @@ final class ProgressTrackerTests: XCTestCase {
     }
 
     func testNextUpUsesComingSoon() {
-        XCTAssertEqual(ProgressMilestone.nextUp.dateLabel, "Coming soon")
+        XCTAssertEqual(ProgressMilestone.nextUp.dateLabel, "come again tomorrow")
     }
 }
