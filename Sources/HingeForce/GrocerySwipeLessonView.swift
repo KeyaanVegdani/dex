@@ -24,10 +24,6 @@ struct GrocerySwipeLessonView: View {
                        onContinue: onContinue) { size in
             GrocerySwipeScene(state: model.scene, size: size, player: model.player)
         }
-        .overlay(alignment: .topTrailing) {
-            PillButton(title: "Skip", style: .secondary, action: onContinue)
-                .padding(24)
-        }
         .overlay(alignment: .bottomLeading) { tiltReadout.padding(20) }
         .onAppear { model.start() }
         .onDisappear { model.stop() }

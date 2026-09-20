@@ -23,10 +23,6 @@ struct GroceryPressLessonView: View {
                        onContinue: onContinue) { size in
             GroceryTossScene(state: model.scene, size: size)
         }
-        .overlay(alignment: .topTrailing) {
-            PillButton(title: "Skip", style: .secondary, action: onContinue)
-                .padding(24)
-        }
         .overlay(alignment: .bottomLeading) { hingeReadout.padding(20) }
         .onAppear { model.start() }
         .onDisappear { model.stop() }

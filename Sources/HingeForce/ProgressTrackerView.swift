@@ -6,9 +6,11 @@ import SwiftUI
 struct ProgressTrackerView: View {
     @State private var focusedIndex = ProgressMilestone.cake.rawValue
 
+    /// Dex logo → back to Home (same asset / corner placement as HomeView).
+    var onHome: () -> Void = {}
     /// Restart the cake story set from the blow-candles lesson.
     var onReplayCake: () -> Void = {}
-    /// Grocery Day set isn’t implemented yet — RootView routes this to the best available entry.
+    /// Restart the Grocery Day set from Push the cart.
     var onReplayTomato: () -> Void = {}
 
     private let milestones = ProgressMilestone.allCases
@@ -16,6 +18,8 @@ struct ProgressTrackerView: View {
 
     var body: some View {
         GeometryReader { geo in
+            let layout = HomeLayout(size: geo.size)
+            let logo = HomeArtwork.logoSize
             let focusedSide = min(geo.size.width * 0.28, geo.size.height * 0.42, 320)
             let sideSide = focusedSide * 0.7
             let buttonGap: CGFloat = 76
@@ -25,8 +29,19 @@ struct ProgressTrackerView: View {
             let titleY: CGFloat = 72
             let replayY = geo.size.height - 90
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 Theme.background
+
+                Button(action: onHome) {
+                    Image(nsImage: HomeArtwork.logo)
+                        .resizable()
+                        .frame(width: logo.width * layout.unit * 1.02,
+                               height: logo.height * layout.unit * 1.02)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .offset(x: 34, y: 40)
+                .accessibilityLabel("Home")
 
                 Text("Log")
                     .font(Theme.headingFont)

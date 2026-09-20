@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// Grocery Day step 1: blow to push the cart down the aisle (top-left → bottom-right).
-/// Jane: later grocery steps plug in after `onContinue`; keep Skip + LessonScaffold chrome.
 struct GroceryLessonView: View {
     @StateObject private var model: GroceryCartModel
     @ObservedObject private var mic: MicMonitor
@@ -23,10 +22,6 @@ struct GroceryLessonView: View {
                        continueStart: GroceryCart.continueStart,
                        onContinue: onContinue) { size in
             GroceryCartScene(state: model.scene, size: size)
-        }
-        .overlay(alignment: .topTrailing) {
-            PillButton(title: "Skip", style: .secondary, action: onContinue)
-                .padding(24)
         }
         .overlay(alignment: .bottomLeading) { micReadout.padding(20) }
         .onAppear { model.start() }

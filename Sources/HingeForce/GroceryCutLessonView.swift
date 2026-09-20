@@ -56,12 +56,6 @@ struct GroceryCutLessonView: View {
                 .transition(.opacity)
             }
         }
-        .overlay(alignment: .topTrailing) {
-            if phase == .squishing {
-                PillButton(title: "Skip", style: .secondary, action: onContinue)
-                    .padding(24)
-            }
-        }
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
