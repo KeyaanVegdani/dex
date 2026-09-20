@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// Pure helpers for the Grocery Day “Swipe to pay” trackpad drag.
+/// Pure helpers for the Grocery Day “Swipe to pay” MacBook-tilt activity.
 enum GrocerySwipe {
     /// Native reader art aspect (reader-idle / slot-front / thank-you).
     static let readerPixelSize = CGSize(width: 734, height: 570)
@@ -9,14 +9,22 @@ enum GrocerySwipe {
 
     /// Swipe path angle from vertical toward the left (degrees), matching the reader slot.
     static let pathDegreesFromVertical = 30.0
-    /// Fraction of path that counts as a successful swipe on release.
+    /// Tip past the resting baseline ignored (avoids jitter).
+    static let tipDeadzoneDegrees = 5.0
+    /// Clear downward tip that maps to full swipe progress (~28° from rest — not absurd).
+    static let tipCompleteDegrees = 28.0
+    /// Tip rate (deg/s away from baseline) that adds a full rate boost.
+    static let referenceTipRateDegPerSec = 45.0
+    /// Extra progress fraction available from a fast tip (on top of angle).
+    static let maxRateBoost = 0.22
+    /// Fraction of path that counts as a successful swipe.
     static let successThreshold = 0.88
     static let continueStart = 0.28
     static let arrowOpacityRest = 0.5
     static let arrowOpacityFull = 1.0
 
     static let title = "Swipe to pay"
-    static let subtitle = "Click and drag on your mousepad."
+    static let subtitle = "Tilt your MacBook down."
 
     /// Unit direction along the slot: down and left.
     static func pathUnit() -> CGVector {
@@ -62,14 +70,32 @@ enum GrocerySwipe {
         )
     }
 
-    /// Progress from press origin → current point, projected onto the 30° axis (drag distance only).
-    static func progressFromDrag(from origin: CGPoint, to current: CGPoint, pathLength: CGFloat) -> Double {
-        guard pathLength > 1e-6 else { return 0 }
-        let u = pathUnit()
-        let dx = Double(current.x - origin.x)
-        let dy = Double(current.y - origin.y)
-        let along = dx * u.dx + dy * u.dy
-        return min(max(along / Double(pathLength), 0), 1)
+    /// Degrees tipped away from the pose captured when the step started.
+    static func tipAmount(pitchDegrees: Double, baselinePitch: Double) -> Double {
+        abs(pitchDegrees - baselinePitch)
+    }
+
+    /// Progress 0...1 from tip angle alone (deadzone → complete).
+    static func progressFromTipAmount(_ tipDegrees: Double) -> Double {
+        let span = tipCompleteDegrees - tipDeadzoneDegrees
+        guard span > 1e-6 else { return 0 }
+        return min(max((tipDegrees - tipDeadzoneDegrees) / span, 0), 1)
+    }
+
+    /// Combines tip angle with tip rate so a clear downward tip finishes without absurd angles.
+    /// `tipRateDegPerSec` is how fast tip amount is increasing (0 if leveling out).
+    static func progress(tipDegrees: Double, tipRateDegPerSec: Double, previous: Double) -> Double {
+        let fromAngle = progressFromTipAmount(tipDegrees)
+        let rateBoost: Double
+        if fromAngle > 0.02, tipRateDegPerSec > 0 {
+            let intensity = min(max(tipRateDegPerSec / referenceTipRateDegPerSec, 0), 1.4)
+            rateBoost = maxRateBoost * intensity
+        } else {
+            rateBoost = 0
+        }
+        let target = min(fromAngle + rateBoost, 1)
+        // Monotonic: card only advances until complete (no jitter back while leveling).
+        return min(max(max(previous, target), 0), 1)
     }
 
     static func arrowOpacity(progress: Double) -> Double {

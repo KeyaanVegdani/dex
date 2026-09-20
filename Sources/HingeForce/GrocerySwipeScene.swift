@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Reader back → credit card → slot front. Card slides on a fixed 30° path.
+/// Reader back → credit card → slot front. Card slides on a fixed 30° path from MacBook tilt.
 struct GrocerySwipeScene: View {
     let state: GrocerySwipeSceneState
     let size: CGSize
-    let force: TrackpadForce
 
     var body: some View {
         let readerSize = GrocerySwipe.readerSize(for: size)
@@ -58,15 +57,9 @@ struct GrocerySwipeScene: View {
                     .zIndex(2)
                     .allowsHitTesting(false)
             }
-
-            if !showThankYou {
-                ForcePad(model: force)
-                    .frame(width: size.width, height: size.height)
-                    .contentShape(Rectangle())
-                    .zIndex(10)
-            }
         }
         .frame(width: size.width, height: size.height)
+        .allowsHitTesting(false)
     }
 }
 

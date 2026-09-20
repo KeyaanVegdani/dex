@@ -5,45 +5,38 @@ struct GrocerySwipeSceneState: Equatable {
     var time = 0.0
     /// 0...1 along the fixed 30° slot path.
     var progress = 0.0
-    var isPressed = false
     var isComplete = false
     /// Seconds since a successful swipe, or nil while still swiping.
     var completionElapsed: Double?
 }
 
-/// Drives swipe-to-pay: card stays on a fixed 30° path; drag distance along that axis sets progress.
+/// Drives swipe-to-pay from MacBook pitch tilt (accelerometer). Card stays on the 30° path.
 @MainActor
 final class GrocerySwipeModel: ObservableObject {
     private static let frameInterval: TimeInterval = 1.0 / 60.0
-    private static let snapBackPerSecond = 2.8
 
     @Published private(set) var scene = GrocerySwipeSceneState()
 
-    let force: TrackpadForce
-    private var contentSize: CGSize = .zero
-    /// Scene-space point where the press began (for drag-delta projection).
-    private var pressOrigin: CGPoint?
-    private var wasPressed = false
-    private var snappingBack = false
+    let accelerometer: Accelerometer
+    private var baselinePitch: Double?
+    private var previousTipAmount = 0.0
     private var startedAt = Date()
     private var lastTick = Date()
     private var completedAt: Date?
     private var timer: Timer?
 
-    init(force: TrackpadForce) {
-        self.force = force
+    init(accelerometer: Accelerometer) {
+        self.accelerometer = accelerometer
     }
 
     func start() {
+        accelerometer.start()
         guard timer == nil else { return }
-        force.release()
         startedAt = Date()
         lastTick = startedAt
-        pressOrigin = nil
-        wasPressed = false
-        snappingBack = false
+        baselinePitch = nil
+        previousTipAmount = 0
         completedAt = nil
-        contentSize = .zero
         scene = GrocerySwipeSceneState()
         timer = Timer.scheduledTimer(withTimeInterval: Self.frameInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
@@ -53,11 +46,7 @@ final class GrocerySwipeModel: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
-        force.release()
-    }
-
-    func updateContentSize(_ size: CGSize) {
-        contentSize = size
+        accelerometer.stop()
     }
 
     private func tick() {
@@ -71,62 +60,46 @@ final class GrocerySwipeModel: ObservableObject {
         if let completedAt {
             state.progress = 1
             state.isComplete = true
-            state.isPressed = false
             state.completionElapsed = now.timeIntervalSince(completedAt)
             scene = state
             return
         }
 
-        // Wait for intro before counting drags.
+        // Wait for intro before counting tilt.
         if state.time < LessonIntro.duration * 0.45 {
+            if let pitch = accelerometer.pitchDegrees, baselinePitch == nil {
+                baselinePitch = pitch
+            }
             state.progress = 0
-            state.isPressed = false
             scene = state
             return
         }
 
-        let size = contentSize
-        let ready = size.width > 1 && size.height > 1
-        let readerSize = GrocerySwipe.readerSize(for: size)
-        let travel = GrocerySwipe.pathLength(readerSize: readerSize)
-
-        if snappingBack {
-            state.isPressed = false
-            state.progress = max(0, state.progress - Self.snapBackPerSecond * dt)
-            if state.progress <= 0.001 {
-                state.progress = 0
-                snappingBack = false
-            }
+        guard let pitch = accelerometer.pitchDegrees else {
             scene = state
             return
         }
 
-        if ready, force.isPressed, let loc = force.locationNorm {
-            let point = CGPoint(x: loc.x * size.width, y: loc.y * size.height)
-            if pressOrigin == nil {
-                pressOrigin = point
-            }
-            if let origin = pressOrigin {
-                // Project drag delta onto the 30° axis — card never leaves the path.
-                state.progress = GrocerySwipe.progressFromDrag(from: origin, to: point, pathLength: travel)
-            }
-            state.isPressed = true
-            wasPressed = true
-        } else if wasPressed {
-            wasPressed = false
-            pressOrigin = nil
-            state.isPressed = false
-            if state.progress >= GrocerySwipe.successThreshold {
-                completedAt = now
-                state.progress = 1
-                state.isComplete = true
-                state.completionElapsed = 0
-            } else {
-                snappingBack = true
-            }
-        } else {
-            state.isPressed = false
-            pressOrigin = nil
+        if baselinePitch == nil {
+            baselinePitch = pitch
+            previousTipAmount = 0
+        }
+
+        let baseline = baselinePitch ?? pitch
+        let tip = GrocerySwipe.tipAmount(pitchDegrees: pitch, baselinePitch: baseline)
+        let tipRate = dt > 1e-6 ? max(0, (tip - previousTipAmount) / dt) : 0
+        previousTipAmount = tip
+
+        let progress = GrocerySwipe.progress(tipDegrees: tip,
+                                             tipRateDegPerSec: tipRate,
+                                             previous: state.progress)
+        state.progress = progress
+
+        if progress >= GrocerySwipe.successThreshold {
+            completedAt = now
+            state.progress = 1
+            state.isComplete = true
+            state.completionElapsed = 0
         }
 
         scene = state

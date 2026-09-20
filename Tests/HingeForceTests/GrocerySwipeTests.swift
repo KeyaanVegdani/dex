@@ -28,30 +28,26 @@ final class GrocerySwipeTests: XCTestCase {
         XCTAssertEqual(mid.y, start.y + travel * u.dy * 0.5, accuracy: 0.5)
     }
 
-    func testProgressFromDragProjectsOntoAxis() {
-        let u = GrocerySwipe.pathUnit()
-        let origin = CGPoint(x: 100, y: 100)
-        let pathLen: CGFloat = 200
+    func testTipAmountIsDistanceFromBaseline() {
+        XCTAssertEqual(GrocerySwipe.tipAmount(pitchDegrees: 20, baselinePitch: 5), 15, accuracy: 1e-9)
+        XCTAssertEqual(GrocerySwipe.tipAmount(pitchDegrees: -10, baselinePitch: 5), 15, accuracy: 1e-9)
+    }
 
-        // Full travel along the path → progress 1.
-        let along = CGPoint(x: origin.x + u.dx * pathLen, y: origin.y + u.dy * pathLen)
-        XCTAssertEqual(GrocerySwipe.progressFromDrag(from: origin, to: along, pathLength: pathLen),
-                       1, accuracy: 1e-6)
+    func testProgressFromTipUsesDeadzoneAndCompletesAroundTwentyEight() {
+        XCTAssertEqual(GrocerySwipe.progressFromTipAmount(0), 0, accuracy: 1e-9)
+        XCTAssertEqual(GrocerySwipe.progressFromTipAmount(GrocerySwipe.tipDeadzoneDegrees), 0, accuracy: 1e-9)
+        XCTAssertEqual(GrocerySwipe.progressFromTipAmount(GrocerySwipe.tipCompleteDegrees), 1, accuracy: 1e-9)
+        let midTip = (GrocerySwipe.tipDeadzoneDegrees + GrocerySwipe.tipCompleteDegrees) / 2
+        XCTAssertEqual(GrocerySwipe.progressFromTipAmount(midTip), 0.5, accuracy: 1e-6)
+    }
 
-        // Perpendicular motion should not advance progress.
-        let perp = CGPoint(x: origin.x + u.dy * 80, y: origin.y - u.dx * 80)
-        XCTAssertEqual(GrocerySwipe.progressFromDrag(from: origin, to: perp, pathLength: pathLen),
-                       0, accuracy: 1e-6)
+    func testProgressIsMonotonicAndRateCanBoost() {
+        let slow = GrocerySwipe.progress(tipDegrees: 16, tipRateDegPerSec: 0, previous: 0)
+        let fast = GrocerySwipe.progress(tipDegrees: 16, tipRateDegPerSec: 60, previous: 0)
+        XCTAssertGreaterThan(fast, slow)
 
-        // Half travel → ~0.5
-        let half = CGPoint(x: origin.x + u.dx * pathLen * 0.5, y: origin.y + u.dy * pathLen * 0.5)
-        XCTAssertEqual(GrocerySwipe.progressFromDrag(from: origin, to: half, pathLength: pathLen),
-                       0.5, accuracy: 1e-6)
-
-        // Dragging the wrong way (up the slot) clamps at 0.
-        let back = CGPoint(x: origin.x - u.dx * 40, y: origin.y - u.dy * 40)
-        XCTAssertEqual(GrocerySwipe.progressFromDrag(from: origin, to: back, pathLength: pathLen),
-                       0, accuracy: 1e-6)
+        let held = GrocerySwipe.progress(tipDegrees: 10, tipRateDegPerSec: 0, previous: 0.7)
+        XCTAssertEqual(held, 0.7, accuracy: 1e-9)
     }
 
     func testArrowEndpointsStayInsideReaderFrame() {
@@ -73,7 +69,7 @@ final class GrocerySwipeTests: XCTestCase {
 
     func testCopyAndSuccessThreshold() {
         XCTAssertEqual(GrocerySwipe.title, "Swipe to pay")
-        XCTAssertTrue(GrocerySwipe.subtitle.lowercased().contains("drag"))
+        XCTAssertTrue(GrocerySwipe.subtitle.lowercased().contains("tilt"))
         XCTAssertGreaterThan(GrocerySwipe.successThreshold, 0.8)
         XCTAssertLessThanOrEqual(GrocerySwipe.successThreshold, 1.0)
     }
