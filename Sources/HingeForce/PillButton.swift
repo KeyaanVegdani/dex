@@ -15,7 +15,9 @@ struct PillButton: View {
                 .foregroundStyle(style == .primary ? Theme.title : Theme.pillText)
                 .padding(.horizontal, 64)
                 .padding(.vertical, 20)
-                .background(style == .primary ? Theme.yellow : Theme.pill, in: Capsule())
+                .hoverSurface(Capsule(),
+                              rest: style == .primary ? Theme.yellow : Theme.pill,
+                              hover: style == .primary ? Theme.yellowHover : Theme.pillHover)
         }
         .buttonStyle(PressableButtonStyle())
     }
@@ -41,7 +43,10 @@ struct PillCircleButton: View {
 struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(HoverSound())
+            .modifier(PointerCursor())
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .modifier(PressSound(isPressed: configuration.isPressed))
     }
 }

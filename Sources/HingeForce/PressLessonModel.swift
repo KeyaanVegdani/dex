@@ -21,6 +21,7 @@ final class PressLessonModel: ObservableObject {
     private var depthAtCompletion = 0.0
     private var timer: Timer?
     private var tickCount = 0
+    private var previousDepth = 0.0
 
     init(force: TrackpadForce) {
         self.force = force
@@ -41,6 +42,7 @@ final class PressLessonModel: ObservableObject {
         timer?.invalidate()
         timer = nil
         force.release()
+        SoundEffects.shared.stopCut()
     }
 
     private func tick() {
@@ -62,11 +64,21 @@ final class PressLessonModel: ObservableObject {
             state.depth = PressCut.depth(forReading: displayedReading)
 
             tracker.update(reading: reading, dt: dt)
+
+            // The knife's sound goes on for as long as it is being pushed through, following how deep it is and how
+            // fast it moves.
+            let speed = dt > 0 ? (state.depth - previousDepth) / dt : 0
+            previousDepth = state.depth
+            SoundEffects.shared.setCut(level: CutSoundLevel.level(depth: state.depth, speed: speed, pressing: force.isPressed),
+                                       depth: state.depth)
+
             if tracker.isComplete {
                 completedAt = now
                 depthAtCompletion = state.depth
                 state.completionElapsed = 0
                 isComplete = true
+                SoundEffects.shared.stopCut()
+                SoundEffects.shared.play(.partFinished)
             }
 
             tickCount += 1

@@ -13,6 +13,7 @@ final class CutLessonModel: ObservableObject {
 
     let lid: LidAngleSensor
     private var tracker = AlignmentTracker()
+    private var clicks = HingeClickTracker()
     private var displayedHinge: Double?
     private var target: Double?
     private var startedAt = Date()
@@ -29,6 +30,7 @@ final class CutLessonModel: ObservableObject {
         guard timer == nil else { return }
         startedAt = Date()
         lastTick = startedAt
+        clicks.reset()
         timer = Timer.scheduledTimer(withTimeInterval: Self.frameInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
@@ -48,6 +50,13 @@ final class CutLessonModel: ObservableObject {
         state.time = now.timeIntervalSince(startedAt)
 
         if let reading = lid.angle {
+            // The hinge clicks as it turns, higher and tighter the further it opens, until the cut is lined up.
+            if completedAt == nil {
+                for click in clicks.update(angle: reading, dt: dt) {
+                    SoundEffects.shared.hingeClick(pitch: click.pitch, intensity: click.intensity)
+                }
+            }
+
             let shown = displayedHinge.map { $0 + (reading - $0) * (1 - exp(-dt / Self.smoothing)) } ?? reading
             displayedHinge = shown
 
@@ -59,6 +68,7 @@ final class CutLessonModel: ObservableObject {
                 if tracker.isComplete {
                     completedAt = now
                     isComplete = true
+                    SoundEffects.shared.play(.partFinished)
                 }
             }
         }
