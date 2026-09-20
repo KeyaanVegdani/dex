@@ -128,7 +128,7 @@ enum ProgressMilestone: Int, CaseIterable, Identifiable {
         switch self {
         case .tomato: return "Tomato lesson, September 19"
         case .cake: return "Cake lesson, September 20"
-        case .nextUp: return "Next lesson, come again tomorrow"
+        case .nextUp: return "Next lesson, Unlock tomorrow"
         }
     }
 }
