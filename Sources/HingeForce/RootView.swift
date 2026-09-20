@@ -1,12 +1,13 @@
 import SwiftUI
 
 struct RootView: View {
-    private enum Page { case start, lesson, cut, press, progress }
+    private enum Page { case home, testing, history, lesson, cut, press, wash, progress }
 
     @ObservedObject var mic: MicMonitor
     @ObservedObject var lid: LidAngleSensor
     @ObservedObject var force: TrackpadForce
-    @State private var page: Page = .start
+    @ObservedObject var accelerometer: Accelerometer
+    @State private var page: Page = .home
     /// Bumped to give the lessons a fresh start (new intro, new timers, a new cut line) when redone.
     @State private var lessonRun = 0
     @StateObject private var transition = PageTransitionDriver()
@@ -14,9 +15,28 @@ struct RootView: View {
     var body: some View {
         ZStack {
             switch page {
-            case .start:
-                StartView { go(to: .lesson) }
+            case .home:
+                HomeView(onStartPractice: { go(to: .lesson) },
+                         onTest: { go(to: .testing) },
+                         onHistory: { go(to: .history) })
                     .transition(.opacity)
+            case .testing:
+                BlankPage(title: "Test System") { go(to: .home) }
+                    .transition(.opacity)
+            case .history, .progress:
+                ProgressTrackerView(
+                    onReplayCake: {
+                        // Restart the cake story set from the blow-candles lesson.
+                        lessonRun += 1
+                        go(to: .lesson)
+                    },
+                    onReplayTomato: {
+                        // TODO: Grocery Day activity set isn’t implemented yet — return Home
+                        // as the best available entry until that flow exists.
+                        go(to: .home)
+                    }
+                )
+                .transition(.opacity)
             case .lesson:
                 LessonView(mic: mic) { stretch(to: .cut) }
                     .id(lessonRun)
@@ -26,22 +46,12 @@ struct RootView: View {
                     .id(lessonRun)
                     .transition(.opacity)
             case .press:
-                PressLessonView(force: force) { go(to: .progress) }
+                PressLessonView(force: force) { stretch(to: .wash) }
                     .id(lessonRun)
                     .transition(.opacity)
-            case .progress:
-                ProgressTrackerView(
-                    onReplayCake: {
-                        // Restart the cake story set from the blow-candles lesson.
-                        lessonRun += 1
-                        go(to: .lesson)
-                    },
-                    onReplayTomato: {
-                        // TODO: Grocery Day activity set isn’t implemented yet — return to Start
-                        // as the best available entry until that flow exists.
-                        go(to: .start)
-                    }
-                )
+            case .wash:
+                WashLessonView(accelerometer: accelerometer) { go(to: .progress) }
+                    .id(lessonRun)
                     .transition(.opacity)
             }
         }
