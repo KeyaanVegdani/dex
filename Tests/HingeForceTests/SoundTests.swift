@@ -61,8 +61,8 @@ private func roughness(_ x: [Float], rate: Double) -> Double {
 // MARK: - The MP3s
 
 final class SoundLoaderTests: XCTestCase {
-    func testAllThreeEmbeddedSoundsDecode() throws {
-        for (name, data) in [("button", SoundData.button), ("partFinished", SoundData.partFinished), ("lessonFinished", SoundData.lessonFinished)] {
+    func testAllFourEmbeddedSoundsDecode() throws {
+        for (name, data) in [("button", SoundData.button), ("hover", SoundData.hover), ("partFinished", SoundData.partFinished), ("lessonFinished", SoundData.lessonFinished)] {
             let buffer = try XCTUnwrap(SoundLoader.decode(base64: data), name)
             XCTAssertGreaterThan(buffer.frameLength, 1000, name)
         }
@@ -77,6 +77,22 @@ final class SoundLoaderTests: XCTestCase {
         let first = Array(UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(rate * 0.03)))
         let peak = (0..<Int(buffer.frameLength)).map { abs(buffer.floatChannelData![0][$0]) }.max()!
         XCTAssertGreaterThan(first.map { abs($0) }.max()!, peak * 0.2, "the first click lands within 30 ms of pressing")
+    }
+
+    func testHoverSoundIsAShortQuietBlipThatStartsAtOnce() throws {
+        let hover = try XCTUnwrap(SoundLoader.decode(base64: SoundData.hover))
+        let button = try XCTUnwrap(SoundLoader.decode(base64: SoundData.button))
+        let rate = hover.format.sampleRate
+        XCTAssertLessThan(Double(hover.frameLength) / rate, 0.1, "well under a tenth of a second, so it can't drag")
+        XCTAssertGreaterThan(Double(hover.frameLength) / rate, 0.02)
+
+        func peak(_ b: AVAudioPCMBuffer) -> Float {
+            (0..<Int(b.frameLength)).map { abs(b.floatChannelData![0][$0]) }.max()!
+        }
+        XCTAssertLessThan(peak(hover), peak(button) * 0.5, "a hover is quieter than a press")
+
+        let first = (0..<Int(rate * 0.012)).map { abs(hover.floatChannelData![0][$0]) }.max()!
+        XCTAssertGreaterThan(first, peak(hover) * 0.1, "sound begins within 12 ms of the pointer arriving")
     }
 
     func testTheChimesKeepTheirBodyAndOnlyLoseTheSilence() throws {
@@ -312,11 +328,11 @@ final class SoundEffectsEngineTests: XCTestCase {
     private let rate = 48_000.0
 
     /// An engine that renders into memory instead of the speakers, so nothing is heard while testing.
-    private func makeSilentEngine() throws -> (SoundEffects, AVAudioEngine) {
+    private func makeSilentEngine(clock: @escaping () -> Date = Date.init) throws -> (SoundEffects, AVAudioEngine) {
         let engine = AVAudioEngine()
         let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: 2, interleaved: false)!
         try engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 4096)
-        return (SoundEffects(engine: engine), engine)
+        return (SoundEffects(engine: engine, clock: clock), engine)
     }
 
     /// Renders `seconds` of whatever the engine is playing.
@@ -419,6 +435,55 @@ final class SoundEffectsEngineTests: XCTestCase {
         both.stopAmbient(.candles)
         both.stopAmbient(.shower)
         XCTAssertTrue(try render(bothEngine, seconds: 2.0)[Int(rate * 1.8)...].allSatisfy { abs($0) < 0.001 })
+    }
+
+    func testHoverSoundsAreSpacedOutAndStayQuietJustAfterAPress() throws {
+        var now = Date(timeIntervalSince1970: 1_000)
+        let (effects, _) = try makeSilentEngine(clock: { now })
+
+        effects.play(.hover)                                   // pointer arrives
+        XCTAssertEqual(effects.hoverPlayCount, 1)
+        now += 0.05
+        effects.play(.hover)                                   // a flicker of the same hover, 50 ms later
+        XCTAssertEqual(effects.hoverPlayCount, 1, "too soon after the last one")
+        now += 0.05
+        effects.play(.hover)                                   // 100 ms after the first: a genuinely new hover
+        XCTAssertEqual(effects.hoverPlayCount, 2)
+
+        now += 1
+        effects.play(.button)                                  // the button is pressed
+        now += 0.1
+        effects.play(.hover)                                   // the pointer slips out and back in as it shrinks
+        XCTAssertEqual(effects.hoverPlayCount, 2, "quiet for a moment after a press")
+        now += 0.3
+        effects.play(.hover)
+        XCTAssertEqual(effects.hoverPlayCount, 3, "and back to normal afterwards")
+        XCTAssertLessThanOrEqual(SoundEffects.hoverSpacing, 0.1)
+        XCTAssertLessThanOrEqual(SoundEffects.hoverQuietAfterPress, 0.5)
+    }
+
+    func testHoverSoundPlaysThroughTheEngineWithoutHoldingUpThePressSound() throws {
+        let (effects, engine) = try makeSilentEngine()
+        effects.play(.hover)
+        let hoverOnly = try render(engine, seconds: 0.25)
+        XCTAssertGreaterThan(hoverOnly.map { abs($0) }.max()!, 0.03, "audible")
+        XCTAssertLessThan(rms(hoverOnly[Int(rate * 0.15)...]), 0.001, "and over in about a tenth of a second")
+
+        let (both, bothEngine) = try makeSilentEngine()
+        both.play(.hover)
+        both.play(.button)     // pressed straight away: the press must still sound at full strength
+        let mixed = try render(bothEngine, seconds: 0.2)
+        let (pressOnly, pressEngine) = try makeSilentEngine()
+        pressOnly.play(.button)
+        let solo = try render(pressEngine, seconds: 0.2)
+        XCTAssertGreaterThan(mixed.map { abs($0) }.max()!, solo.map { abs($0) }.max()! * 0.95)
+    }
+
+    func testDisabledEffectsMakeNoHoverSoundEither() throws {
+        let (effects, _) = try makeSilentEngine()
+        effects.isEnabled = false
+        effects.play(.hover)
+        XCTAssertEqual(effects.hoverPlayCount, 0)
     }
 
     func testDisabledEffectsMakeNoSound() throws {

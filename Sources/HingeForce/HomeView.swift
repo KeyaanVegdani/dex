@@ -90,7 +90,7 @@ struct HomePage: View {
                 .contentShape(Rectangle())
                 .rotationEffect(.degrees(HomeMotion.bookAngle(activeTime: clock.activeTime)), anchor: .bottom)
             }
-            .buttonStyle(SoundPlainButtonStyle())
+            .buttonStyle(SoundPlainButtonStyle(hoverSound: false))
             .scaleEffect(isHoveringBook ? HomeMotion.hoverScale : 1)
             .offset(y: isHoveringBook ? -HomeMotion.hoverLift * layout.unit : 0)
             .animation(.spring(response: 0.4, dampingFraction: 0.68), value: isHoveringBook)
@@ -99,6 +99,7 @@ struct HomePage: View {
         .frame(width: frame.width, height: frame.height)
         .contentShape(Rectangle())
         .onHover(perform: onBookHover)
+        .modifier(PointerCursor())
         .opacity(HomeMotion.bookOpacity(at: t))
         .offset(x: layout.bookOrigin.x, y: layout.bookOrigin.y + slide)
     }
@@ -116,11 +117,12 @@ struct HomePage: View {
                 Text("History")
                     .font(.system(size: layout.navFont))
                     .foregroundStyle(Color(white: 0.27))
-                    .padding(8)
-                    .contentShape(Rectangle())
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .hoverSurface(RoundedRectangle(cornerRadius: 10), rest: .clear)
             }
             .buttonStyle(SoundPlainButtonStyle())
-            .position(x: layout.size.width - 34 - 30, y: 56)
+            .position(x: layout.size.width - 34 - 34, y: 56)
         }
     }
 
@@ -134,7 +136,7 @@ struct HomePage: View {
             }
             .foregroundStyle(Theme.pillText)
             .frame(width: layout.buttonSize.width, height: layout.buttonSize.height)
-            .background(Theme.pill, in: Capsule())
+            .hoverSurface(Capsule())
         }
         .buttonStyle(HomePressStyle())
         .position(layout.buttonCenter)
@@ -144,6 +146,8 @@ struct HomePage: View {
 private struct HomePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(HoverSound())
+            .modifier(PointerCursor())
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
             .modifier(PressSound(isPressed: configuration.isPressed))
@@ -166,7 +170,7 @@ struct HomeView: View {
                  isHoveringBook: isHoveringBook,
                  onBookHover: { hovering in
                      isHoveringBook = hovering
-                     if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                     if hovering { SoundEffects.shared.play(.hover) }
                  },
                  onStartPractice: onStartPractice,
                  onTest: onTest,
@@ -175,7 +179,6 @@ struct HomeView: View {
             .onDisappear {
                 timer?.invalidate()
                 timer = nil
-                if isHoveringBook { NSCursor.pop() }
             }
     }
 
@@ -206,8 +209,9 @@ struct BlankPage: View {
                 }
                 .font(.system(size: 17))
                 .foregroundStyle(Color(white: 0.27))
-                .padding(10)
-                .contentShape(Rectangle())
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .hoverSurface(RoundedRectangle(cornerRadius: 10), rest: .clear)
             }
             .buttonStyle(SoundPlainButtonStyle())
             .padding(.leading, 26)

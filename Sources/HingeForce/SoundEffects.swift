@@ -91,6 +91,8 @@ final class SoundEffects {
     enum Effect: CaseIterable {
         /// A button being pressed.
         case button
+        /// The pointer moving onto a button.
+        case hover
         /// One part of a lesson done.
         case partFinished
         /// A whole lesson done.
@@ -120,14 +122,25 @@ final class SoundEffects {
     private var ambient: [Ambient: AmbientControl] = [:]
     private var isPrepared = false
     private var lastRestart = Date.distantPast
+    private var lastHover = Date.distantPast
+    private var lastPress = Date.distantPast
+    /// How many hover sounds have been played, which is what tests look at.
+    private(set) var hoverPlayCount = 0
+    private let clock: () -> Date
+
+    /// Hover sounds are at least this far apart, and stay quiet for this long after a button is pressed. Pressing a
+    /// button shrinks it a little, so the pointer can slip out and back in at its edge and would otherwise sound again.
+    static let hoverSpacing = 0.08
+    static let hoverQuietAfterPress = 0.3
     private var observer: NSObjectProtocol?
 
     private static let clickPitches = 8
     private static let clickVoiceCount = 6
     private static let sampleRate = 48_000.0
 
-    init(engine: AVAudioEngine = AVAudioEngine()) {
+    init(engine: AVAudioEngine = AVAudioEngine(), clock: @escaping () -> Date = Date.init) {
         self.engine = engine
+        self.clock = clock
     }
 
     /// Loads everything and starts the engine. Safe to call again.
@@ -135,7 +148,7 @@ final class SoundEffects {
         guard !isPrepared else { return }
         isPrepared = true
 
-        let sources: [(Effect, String, Int)] = [(.button, SoundData.button, 3), (.partFinished, SoundData.partFinished, 2), (.lessonFinished, SoundData.lessonFinished, 1)]
+        let sources: [(Effect, String, Int)] = [(.button, SoundData.button, 3), (.hover, SoundData.hover, 2), (.partFinished, SoundData.partFinished, 2), (.lessonFinished, SoundData.lessonFinished, 1)]
         for (effect, data, voiceCount) in sources {
             guard let buffer = SoundLoader.decode(base64: data) else { continue }
             buffers[effect] = buffer
@@ -163,6 +176,18 @@ final class SoundEffects {
 
     func play(_ effect: Effect) {
         guard isEnabled else { return }
+        let now = clock()
+        switch effect {
+        case .button:
+            lastPress = now
+        case .hover:
+            guard now.timeIntervalSince(lastHover) >= Self.hoverSpacing,
+                  now.timeIntervalSince(lastPress) >= Self.hoverQuietAfterPress else { return }
+            lastHover = now
+            hoverPlayCount += 1
+        default:
+            break
+        }
         prepare()
         guard let buffer = buffers[effect], let pool = voices[effect], !pool.isEmpty else { return }
         let index = nextVoice[effect, default: 0]
@@ -258,9 +283,28 @@ struct PressSound: ViewModifier {
     }
 }
 
-/// A button that looks like its label, and makes the button sound when pressed.
+/// Plays the hover sound when the pointer moves onto a view.
+struct HoverSound: ViewModifier {
+    func body(content: Content) -> some View {
+        content.onHover { hovering in
+            if hovering { SoundEffects.shared.play(.hover) }
+        }
+    }
+}
+
+/// A button that looks like its label, and makes the press sound when pressed, and the hover sound and pointing-hand
+/// cursor when the pointer arrives. Set `hoverSound` to false where the button's owner already tracks hover itself.
 struct SoundPlainButtonStyle: ButtonStyle {
+    var hoverSound = true
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.modifier(PressSound(isPressed: configuration.isPressed))
+        Group {
+            if hoverSound {
+                configuration.label.modifier(HoverSound()).modifier(PointerCursor())
+            } else {
+                configuration.label
+            }
+        }
+        .modifier(PressSound(isPressed: configuration.isPressed))
     }
 }

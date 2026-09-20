@@ -3,6 +3,8 @@ import SwiftUI
 struct PressScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(HoverSound())
+            .modifier(PointerCursor())
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
             .modifier(PressSound(isPressed: configuration.isPressed))
@@ -53,7 +55,7 @@ struct TestPageFrame<Content: View>: View {
                         .font(.system(size: layout.buttonFont, weight: .semibold))
                         .foregroundStyle(Theme.pillText)
                         .frame(width: layout.buttonSize.width, height: layout.buttonSize.height)
-                        .background(Theme.pill, in: Capsule())
+                        .hoverSurface(Capsule())
                 }
                 .buttonStyle(PressScaleButtonStyle())
                 .position(layout.buttonCenter)
@@ -284,7 +286,7 @@ struct HangTightPage: View {
                             .font(.system(size: layout.buttonFont, weight: .semibold))
                             .foregroundStyle(Theme.pillText)
                             .frame(width: layout.buttonSize.width, height: layout.buttonSize.height)
-                            .background(Theme.pill, in: Capsule())
+                            .hoverSurface(Capsule())
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .position(layout.buttonCenter)
