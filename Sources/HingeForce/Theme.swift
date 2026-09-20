@@ -14,4 +14,12 @@ enum Theme {
     static let smoke = Color(red: 0xD6 / 255, green: 0xE4 / 255, blue: 0xE9 / 255)
     static let title = Color.black
     static let subtitle = Color(white: 0.42)
+
+    /// Shared lesson / story-log heading (cake activity caption title).
+    static let headingFont = Font.system(size: 40, weight: .bold)
+
+    /// Progress-tracker card fills, matching the mockup pastel tiles.
+    static let tomatoCard = Color(red: 0.992, green: 0.957, blue: 0.890)
+    static let cakeCard = Color(red: 0.91, green: 0.88, blue: 0.97)
+    static let nextCard = Color(white: 0.94)
 }

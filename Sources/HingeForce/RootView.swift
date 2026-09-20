@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
-    private enum Page { case start, lesson, cut, press, next }
+    private enum Page { case start, lesson, cut, press, progress }
 
     @ObservedObject var mic: MicMonitor
     @ObservedObject var lid: LidAngleSensor
@@ -26,15 +26,12 @@ struct RootView: View {
                     .id(lessonRun)
                     .transition(.opacity)
             case .press:
-                PressLessonView(force: force) { go(to: .next) }
+                PressLessonView(force: force) { go(to: .progress) }
                     .id(lessonRun)
                     .transition(.opacity)
-            case .next:
-                RedoView {
-                    lessonRun += 1
-                    go(to: .lesson)
-                }
-                .transition(.opacity)
+            case .progress:
+                ProgressTrackerView()
+                    .transition(.opacity)
             }
         }
         .frame(minWidth: 900, maxWidth: .infinity, minHeight: 600, maxHeight: .infinity)
