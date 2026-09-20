@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct RootView: View {
-    private enum Page { case start, lesson, cut, press, wash, next }
+    private enum Page { case home, testing, history, lesson, cut, press, wash, next }
 
     @ObservedObject var mic: MicMonitor
     @ObservedObject var lid: LidAngleSensor
     @ObservedObject var force: TrackpadForce
     @ObservedObject var accelerometer: Accelerometer
-    @State private var page: Page = .start
+    @State private var page: Page = .home
     /// Bumped to give the lessons a fresh start (new intro, new timers, a new cut line) when redone.
     @State private var lessonRun = 0
     @StateObject private var transition = PageTransitionDriver()
@@ -15,8 +15,16 @@ struct RootView: View {
     var body: some View {
         ZStack {
             switch page {
-            case .start:
-                StartView { go(to: .lesson) }
+            case .home:
+                HomeView(onStartPractice: { go(to: .lesson) },
+                         onTest: { go(to: .testing) },
+                         onHistory: { go(to: .history) })
+                    .transition(.opacity)
+            case .testing:
+                BlankPage(title: "Test System") { go(to: .home) }
+                    .transition(.opacity)
+            case .history:
+                BlankPage(title: "History") { go(to: .home) }
                     .transition(.opacity)
             case .lesson:
                 LessonView(mic: mic) { stretch(to: .cut) }

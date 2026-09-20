@@ -107,7 +107,7 @@ enum Illustration {
 
     /// Draws the SVG into a bitmap `pixelScale` times larger than its natural size, and returns
     /// an image whose point size is still the natural size.
-    private static func rasterize(svg: String, pixelScale: CGFloat) -> NSImage {
+    static func rasterize(svg: String, pixelScale: CGFloat) -> NSImage {
         guard let source = NSImage(data: Data(svg.utf8)) else { return NSImage() }
         let pixelsWide = Int(source.size.width * pixelScale)
         let pixelsHigh = Int(source.size.height * pixelScale)
