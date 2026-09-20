@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Cart back → tomato → cart front. Tomato arcs from above the basket into the floor.
+/// Cart back → tomato → cart front. Tomato follows a parabola into the basket.
 struct GroceryTossScene: View {
     let state: GroceryTossSceneState
     let size: CGSize
@@ -10,7 +10,7 @@ struct GroceryTossScene: View {
         let tomatoSide = cartSide * 0.38
         let cartOrigin = CGPoint(x: size.width / 2, y: size.height * 0.48)
         let t = state.progress
-        let tomatoCenter = tomatoPosition(progress: t, cartCenter: cartOrigin, cartSide: cartSide)
+        let tomatoCenter = GroceryToss.tomatoPosition(progress: t, cartCenter: cartOrigin, cartSide: cartSide)
         // Shrink slightly as it settles into the basket.
         let tomatoScale = GroceryToss.lerp(1.0, 0.78, t)
 
@@ -37,17 +37,5 @@ struct GroceryTossScene: View {
         }
         .frame(width: size.width, height: size.height)
         .allowsHitTesting(false)
-    }
-
-    /// Start: floating above basket center. End: bottom-right of basket floor (through front grid).
-    private func tomatoPosition(progress t: Double, cartCenter: CGPoint, cartSide: CGFloat) -> CGPoint {
-        let start = CGPoint(x: cartCenter.x, y: cartCenter.y - cartSide * 0.42)
-        let end = CGPoint(x: cartCenter.x + cartSide * 0.12, y: cartCenter.y + cartSide * 0.06)
-        // Ease downward so early fold moves it into the mouth, then settles.
-        let easeY = t * t
-        return CGPoint(
-            x: GroceryToss.lerp(start.x, end.x, t),
-            y: GroceryToss.lerp(start.y, end.y, easeY)
-        )
     }
 }
