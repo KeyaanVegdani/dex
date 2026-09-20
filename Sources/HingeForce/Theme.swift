@@ -6,6 +6,9 @@ enum Theme {
     static let track = Color(white: 0.935)
     static let green = Color(red: 0.47, green: 0.94, blue: 0.05)
     static let pill = Color(white: 0.935)
+    /// The grey a button's background turns to while the pointer is over it: #E3E3E3.
+    static let pillHover = RGB(hex: 0xE3E3E3).color
+    static let yellowHover = Color(red: 0.99 * 0.92, green: 0.71 * 0.92, blue: 0.09 * 0.92)
     static let pillText = Color(white: 0.27)
     /// The cake's cut line, before it turns white.
     static let cutLine = (red: 0xB5 / 255.0, green: 0x96 / 255.0, blue: 0xE5 / 255.0)

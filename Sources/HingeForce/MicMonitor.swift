@@ -55,6 +55,16 @@ final class MicMonitor: ObservableObject {
         capture?.stop()
         capture = nil
         inputDeviceName = nil
+        forgetCalibration()
+    }
+
+    /// The learned noise level belongs to one listening session; the next one learns it afresh, so nothing
+    /// should mistake the old values for a microphone that is ready.
+    private func forgetCalibration() {
+        noiseFloorDB = nil
+        thresholdDB = nil
+        levelDB = nil
+        blowReading = 1
     }
 
     /// Re-learns the background noise. Stay quiet for about two seconds afterwards.
@@ -80,6 +90,7 @@ final class MicMonitor: ObservableObject {
 
         inputDeviceName = microphone.name
         status = .calibrating
+        forgetCalibration()
         detector.recalibrate()
 
         let capture = MicCapture(
