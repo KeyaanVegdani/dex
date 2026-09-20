@@ -1,14 +1,21 @@
 import SwiftUI
 
 /// Post-cake story log: a three-card timeline (tomato → cake → next-up) with focus scrubbing.
+/// Cards physically slide so the focused milestone always sits in the center slot.
 struct ProgressTrackerView: View {
     @State private var focusedIndex = ProgressMilestone.cake.rawValue
 
     private let milestones = ProgressMilestone.allCases
+    /// Shared by every card so side tiles don’t look rounder/sharper than the center after scaling.
+    private static let cornerRadius: CGFloat = 36
+    private static let scrubSpring = Animation.spring(response: 0.38, dampingFraction: 0.82)
 
     var body: some View {
         GeometryReader { geo in
-            let cardSide = min(geo.size.width * 0.28, geo.size.height * 0.42, 320)
+            let focusedSide = min(geo.size.width * 0.28, geo.size.height * 0.42, 320)
+            let sideSide = focusedSide * 0.7
+            let buttonGap: CGFloat = 76
+            let pitch = focusedSide + buttonGap
 
             ZStack {
                 Theme.background
@@ -16,22 +23,32 @@ struct ProgressTrackerView: View {
                 VStack(spacing: 36) {
                     Spacer(minLength: 0)
 
-                    HStack(spacing: 0) {
-                        card(for: .tomato, side: cardSide, focused: focusedIndex == 0)
+                    ZStack {
+                        ForEach(milestones) { milestone in
+                            let relative = milestone.rawValue - focusedIndex
+                            let focused = relative == 0
+                            let visible = abs(relative) <= 1
+                            let size = focused ? focusedSide : sideSide
+
+                            card(for: milestone, side: size)
+                                .opacity(focused ? 1 : (visible ? 0.5 : 0))
+                                .offset(x: CGFloat(relative) * pitch)
+                                .zIndex(focused ? 1 : 0)
+                                .accessibilityHidden(!visible)
+                        }
 
                         scrubButton(systemName: "arrow.left", enabled: focusedIndex > 0) {
                             moveFocus(by: -1)
                         }
-
-                        card(for: .cake, side: cardSide, focused: focusedIndex == 1)
+                        .offset(x: -pitch / 2)
 
                         scrubButton(systemName: "arrow.right", enabled: focusedIndex < milestones.count - 1) {
                             moveFocus(by: 1)
                         }
-
-                        card(for: .nextUp, side: cardSide, focused: focusedIndex == 2)
+                        .offset(x: pitch / 2)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(width: geo.size.width, height: focusedSide)
+                    .animation(Self.scrubSpring, value: focusedIndex)
 
                     Text(milestones[focusedIndex].dateLabel)
                         .font(Theme.headingFont)
@@ -47,22 +64,22 @@ struct ProgressTrackerView: View {
         }
     }
 
-    private func card(for milestone: ProgressMilestone, side: CGFloat, focused: Bool) -> some View {
-        Image(nsImage: AppResources.image(milestone.imageName))
+    private func card(for milestone: ProgressMilestone, side: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+        let inset = milestone.imageInset * (side / 280)
+
+        return Image(nsImage: AppResources.image(milestone.imageName))
             .resizable()
             .scaledToFit()
-            .padding(milestone.imageInset)
+            .padding(inset)
             .frame(width: side, height: side)
-            .background(milestone.background, in: RoundedRectangle(cornerRadius: side * 0.14, style: .continuous))
-            .scaleEffect(focused ? 1 : 0.7)
-            .opacity(focused ? 1 : 0.5)
-            .animation(.spring(response: 0.38, dampingFraction: 0.82), value: focusedIndex)
+            .background(milestone.background, in: shape)
+            .clipShape(shape)
             .accessibilityLabel(milestone.accessibilityLabel)
     }
 
     private func scrubButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         PillCircleButton(systemName: systemName, action: action)
-            .padding(.horizontal, 10)
             .opacity(enabled ? 1 : 0.35)
             .disabled(!enabled)
             .accessibilityLabel(systemName == "arrow.left" ? "Previous milestone" : "Next milestone")
@@ -71,7 +88,7 @@ struct ProgressTrackerView: View {
     private func moveFocus(by delta: Int) {
         let next = focusedIndex + delta
         guard milestones.indices.contains(next) else { return }
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+        withAnimation(Self.scrubSpring) {
             focusedIndex = next
         }
     }
