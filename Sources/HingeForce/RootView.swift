@@ -81,7 +81,7 @@ struct RootView: View {
                     .id(groceryRun)
                     .transition(.opacity)
             case .groceryWash:
-                GroceryWashLessonView(accelerometer: accelerometer) { go(to: .progress) }
+                GrocerySwipeLessonView(force: force) { go(to: .progress) }
                     .id(groceryRun)
                     .transition(.opacity)
             }

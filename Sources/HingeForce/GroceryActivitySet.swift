@@ -6,7 +6,7 @@ import Foundation
 /// 1. `GroceryLessonView` — Push the cart (blow → speed).
 /// 2. `GroceryCutLessonView` — Gently squish the tomato (Force Touch).
 /// 3. `GroceryPressLessonView` — Toss the tomato in the cart (hinge fold).
-/// 4. `GroceryWashLessonView` — placeholder; swap later → Log.
+/// 4. `GrocerySwipeLessonView` — Swipe to pay (click-and-drag) → Log.
 ///
 /// Keep the `RootView` page chain when replacing step bodies.
 enum GroceryActivitySet {
@@ -14,7 +14,7 @@ enum GroceryActivitySet {
         case lesson  // Push the cart
         case cut     // Squish the tomato
         case press   // Toss into cart
-        case wash
+        case swipe   // Swipe to pay
     }
 
     static let displayName = "Grocery Day"
