@@ -1,35 +1,62 @@
 import SwiftUI
 
-/// Grocery Day step 2 — placeholder reuses the cake hinge-cut lesson.
-/// Jane: swap `CutLessonPage` / `CutScene` for the new activity; keep `onContinue`.
+/// Grocery Day step 2: Force Touch squish — dent + darken, or break / gentle success.
 struct GroceryCutLessonView: View {
-    @StateObject private var model: CutLessonModel
-    @ObservedObject private var lid: LidAngleSensor
+    @StateObject private var model: GroceryTomatoModel
+    private let force: TrackpadForce
     private let onContinue: () -> Void
 
-    init(lid: LidAngleSensor, onContinue: @escaping () -> Void) {
-        self.lid = lid
+    init(force: TrackpadForce, onContinue: @escaping () -> Void) {
+        self.force = force
         self.onContinue = onContinue
-        _model = StateObject(wrappedValue: CutLessonModel(lid: lid))
+        _model = StateObject(wrappedValue: GroceryTomatoModel(force: force))
     }
 
     var body: some View {
-        CutLessonPage(scene: model.scene,
-                      title: "How about we cut a slice?",
-                      subtitle: subtitle,
-                      subtitleIsProblem: isProblem,
-                      onContinue: onContinue)
-            .onAppear { model.start() }
-            .onDisappear { model.stop() }
-    }
+        let broken = model.scene.phase == .broken
+        let succeeded = model.scene.phase == .succeeded
 
-    private var subtitle: String {
-        if case .unavailable(let reason) = lid.status { return reason }
-        return "Move the hinge of your laptop to the asked slice size"
-    }
+        LessonScaffold(currentSegment: 1,
+                       introTime: model.scene.time,
+                       outroElapsed: succeeded ? model.scene.completionElapsed : nil,
+                       title: broken ? "Oops, you broke it" : "Gently squish the tomato",
+                       subtitle: broken ? " " : "Tap the tomato with one finger.",
+                       continueStart: GroceryTomato.continueStart,
+                       contentAllowsHits: !broken && !succeeded,
+                       onContinue: onContinue) { size in
+            let side = min(size.width * 0.34, size.height * 0.42, 320)
+            ZStack {
+                if !broken && !succeeded {
+                    // Force pad only over the tomato so presses must land on it.
+                    ForcePad(model: force)
+                        .frame(width: side * 0.92, height: side * 0.78)
+                        .contentShape(Ellipse())
+                }
 
-    private var isProblem: Bool {
-        if case .unavailable = lid.status { return true }
-        return false
+                GroceryTomatoScene(state: model.scene, side: side)
+                    .allowsHitTesting(false)
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .overlay {
+            if broken {
+                VStack {
+                    Spacer()
+                    PillButton(title: "Pick out another tomato", style: .secondary) {
+                        model.pickAnother()
+                    }
+                    .padding(.bottom, 90)
+                }
+                .transition(.opacity)
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if !broken {
+                PillButton(title: "Skip", style: .secondary, action: onContinue)
+                    .padding(24)
+            }
+        }
+        .onAppear { model.start() }
+        .onDisappear { model.stop() }
     }
 }

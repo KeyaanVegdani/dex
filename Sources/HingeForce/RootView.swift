@@ -73,7 +73,7 @@ struct RootView: View {
                     .id(groceryRun)
                     .transition(.opacity)
             case .groceryCut:
-                GroceryCutLessonView(lid: lid) { stretch(to: .groceryPress) }
+                GroceryCutLessonView(force: force) { stretch(to: .groceryPress) }
                     .id(groceryRun)
                     .transition(.opacity)
             case .groceryPress:
