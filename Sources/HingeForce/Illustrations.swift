@@ -68,6 +68,37 @@ enum Illustration {
     static let pressKnife: NSImage = rasterize(svg: pressKnifeSVG, pixelScale: 4)
     static let pressFront: NSImage = rasterize(svg: pressFrontSVG, pixelScale: 3)
 
+    // MARK: Washing lesson (Shower-Head.svg, rain-drop.svg, Mess-1...4.svg, Mess-3-1.svg; plate as in part 3)
+    //
+    // Same units as part 3, with (0, 0) at the plate's top-left. The positions come from the design screenshot.
+
+    static let washHeadSize = CGSize(width: 71, height: 107)
+    /// Where the shower head's pipe is fixed, in the head's own image; the head swings around this point.
+    static let washHeadPivot = CGPoint(x: 35.5, y: 5)
+    /// Top-left of the shower head when it hangs straight down, centred over the plate.
+    static let washHeadOrigin = CGPoint(x: 232.136 - 35.5, y: -327.4)
+    /// The rain drop (rain-drop.svg): a 4x16 capsule.
+    static let washDropSize = CGSize(width: 4, height: 16)
+
+    /// The five messes stuck to the plate, with the size of their artwork and where their top-left sits.
+    struct Mess: Equatable {
+        let name: String
+        let size: CGSize
+        let origin: CGPoint
+        var xRange: ClosedRange<Double> { Double(origin.x)...Double(origin.x + size.width) }
+    }
+    static let washMesses: [Mess] = [
+        Mess(name: "Mess-1", size: CGSize(width: 146, height: 43), origin: CGPoint(x: 34.0, y: 11.3)),
+        Mess(name: "Mess-2", size: CGSize(width: 23, height: 10), origin: CGPoint(x: 192.8, y: 55.2)),
+        Mess(name: "Mess-3-1", size: CGSize(width: 30, height: 9), origin: CGPoint(x: 251.0, y: 12.5)),
+        Mess(name: "Mess-4", size: CGSize(width: 72, height: 16), origin: CGPoint(x: 245.7, y: 35.5)),
+        Mess(name: "Mess-3", size: CGSize(width: 89, height: 18), origin: CGPoint(x: 332.7, y: 26.5)),
+    ]
+
+    static let washHead: NSImage = rasterize(svg: washHeadSVG, pixelScale: 4)
+    static let washMessImages: [NSImage] = [washMess1SVG, washMess2SVG, washMess31SVG, washMess4SVG, washMess3SVG]
+        .map { rasterize(svg: $0, pixelScale: 5) }
+
     static let plate: NSImage = rasterize(svg: canvasSVG(plateShapes), pixelScale: 3)
     static let body: NSImage = rasterize(svg: canvasSVG(bodyShapes), pixelScale: 3)
     /// One stick image; all three candles are the same shape.
@@ -209,6 +240,51 @@ enum Illustration {
     <path d="M386.516 14.3434C386.516 22.4735 299.992 29.0642 193.258 29.0642C86.5246 29.0642 0 22.4735 0 14.3434V109.651C92.8545 138.149 299.324 141.924 386.516 109.651V14.3434Z" fill="#B596E5"/>
     <path d="M0 14.3434C0 22.4735 86.5246 29.0642 193.258 29.0642H194.258V0H193.258C86.5246 0 0 6.21329 0 14.3434Z" fill="#C9B0F0"/>
     <path d="M192.758 29.0642C299.992 29.0642 386.516 22.4735 386.516 14.3434V13.8434H192.758V29.0642Z" fill="#C9B0F0"/>
+    </svg>
+    """#
+
+    /// Shower-Head.svg
+    private static let washHeadSVG = #"""
+    <svg width="71" height="107" viewBox="0 0 71 107" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M35.5 62C15.8939 62 0 77.8939 0 97.5H71C71 77.8939 55.1061 62 35.5 62Z" fill="#E7EDEF"/>
+    <path d="M71 97.5H0V107H71V97.5Z" fill="#D6E4E9"/>
+    <line x1="36" y1="62" x2="36" y2="5" stroke="#D6E4E9" stroke-width="10" stroke-linecap="round"/>
+    </svg>
+    """#
+
+    /// Mess-1.svg
+    private static let washMess1SVG = #"""
+    <svg width="146" height="43" viewBox="0 0 146 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="73" cy="28" rx="73" ry="15" fill="#B596E5"/>
+    <path d="M82.5 0L70 21L98.5 29.5L117.5 27L109.402 0H82.5Z" fill="#E1D3EB"/>
+    </svg>
+    """#
+
+    /// Mess-2.svg
+    private static let washMess2SVG = #"""
+    <svg width="23" height="10" viewBox="0 0 23 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0.894584 5.98629L9.36997 0.336038C10.0003 -0.0841721 10.8139 -0.112194 11.4716 0.263653L21.3596 5.9139C23.1403 6.93145 22.4182 9.65039 20.3673 9.65039H2.00399C0.0251727 9.65039 -0.75189 7.08394 0.894584 5.98629Z" fill="#B596E5"/>
+    </svg>
+    """#
+
+    /// Mess-3-1.svg
+    private static let washMess31SVG = #"""
+    <svg width="30" height="9" viewBox="0 0 30 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="15" cy="4.5" rx="15" ry="4.5" fill="#B596E5"/>
+    </svg>
+    """#
+
+    /// Mess-4.svg
+    private static let washMess4SVG = #"""
+    <svg width="72" height="16" viewBox="0 0 72 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 11L32.9072 0L71.5 16L0 11Z" fill="#E1D3EB"/>
+    </svg>
+    """#
+
+    /// Mess-3.svg (the big oval on the right of the plate in the design)
+    private static let washMess3SVG = #"""
+    <svg width="89" height="18" viewBox="0 0 89 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="44.5" cy="9" rx="44.5" ry="9" fill="#B596E5"/>
     </svg>
     """#
 }

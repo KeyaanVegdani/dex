@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct RootView: View {
-    private enum Page { case start, lesson, cut, press, next }
+    private enum Page { case start, lesson, cut, press, wash, next }
 
     @ObservedObject var mic: MicMonitor
     @ObservedObject var lid: LidAngleSensor
     @ObservedObject var force: TrackpadForce
+    @ObservedObject var accelerometer: Accelerometer
     @State private var page: Page = .start
     /// Bumped to give the lessons a fresh start (new intro, new timers, a new cut line) when redone.
     @State private var lessonRun = 0
@@ -26,7 +27,11 @@ struct RootView: View {
                     .id(lessonRun)
                     .transition(.opacity)
             case .press:
-                PressLessonView(force: force) { go(to: .next) }
+                PressLessonView(force: force) { stretch(to: .wash) }
+                    .id(lessonRun)
+                    .transition(.opacity)
+            case .wash:
+                WashLessonView(accelerometer: accelerometer) { go(to: .next) }
                     .id(lessonRun)
                     .transition(.opacity)
             case .next:

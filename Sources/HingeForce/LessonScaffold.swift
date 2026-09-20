@@ -12,6 +12,8 @@ struct LessonScaffold<Content: View>: View {
     let title: String
     let subtitle: String
     var subtitleIsProblem = false
+    /// The label on the button that appears when the activity is done.
+    var continueTitle = "Continue"
     /// When (in outro seconds) the Continue button starts to appear.
     var continueStart = LessonOutro.continueStart
     /// Whether the artwork can receive clicks. Off by default; lessons that listen for the trackpad turn it on.
@@ -68,7 +70,7 @@ struct LessonScaffold<Content: View>: View {
     /// Fades and pops up from the bottom once the activity is complete.
     private var continueButton: some View {
         let rise = LessonOutro.continueRise(elapsed: outroElapsed, start: continueStart)
-        return PillButton(title: "Continue", style: .secondary, action: onContinue)
+        return PillButton(title: continueTitle, style: .secondary, action: onContinue)
             .keyboardShortcut(.defaultAction)
             .offset(y: 90 * (1 - rise))
             .scaleEffect(0.9 + 0.1 * rise)
