@@ -104,13 +104,8 @@ enum ProgressMilestone: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// Cake sits smaller in its tile (transparent sticker); tomato / next-up already fill the square.
-    var imageInset: CGFloat {
-        switch self {
-        case .cake: return 36
-        case .tomato, .nextUp: return 0
-        }
-    }
+    /// All three milestone PNGs are full square tiles.
+    var imageInset: CGFloat { 0 }
 
     var background: Color {
         switch self {
