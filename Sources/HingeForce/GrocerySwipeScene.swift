@@ -1,61 +1,19 @@
+import AVFoundation
 import SwiftUI
 
-/// Reader back → credit card → slot front. Card slides on a fixed 30° path from MacBook tilt.
+/// Full-bleed / centered swipe video. Paused on load; model starts playback on tilt.
 struct GrocerySwipeScene: View {
     let state: GrocerySwipeSceneState
     let size: CGSize
+    let player: AVPlayer?
 
     var body: some View {
-        let readerSize = GrocerySwipe.readerSize(for: size)
-        let readerCenter = GrocerySwipe.readerCenter(for: size)
-        let cardWidth = readerSize.width * 0.30
-        let cardHeight = cardWidth * (322.0 / 236.0)
-        let cardCenter = GrocerySwipe.cardCenter(progress: state.progress,
-                                                 readerCenter: readerCenter,
-                                                 readerSize: readerSize)
-        let arrowOpacity = GrocerySwipe.arrowOpacity(progress: state.progress)
-        let showThankYou = state.isComplete
-        let arrowLocal = GrocerySwipe.arrowEndpointsInReaderFrame(readerSize: readerSize)
-
+        let side = min(size.width * 0.55, size.height * 0.58, 520)
         ZStack {
-            if !showThankYou {
-                SwipePathArrow(from: arrowLocal.0, to: arrowLocal.1)
-                    .frame(width: readerSize.width, height: readerSize.height)
-                    .position(readerCenter)
-                    .opacity(arrowOpacity)
-                    .allowsHitTesting(false)
-            }
-
-            if showThankYou {
-                Image(nsImage: AppResources.image("reader-thank-you"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: readerSize.width, height: readerSize.height)
-                    .position(readerCenter)
-                    .allowsHitTesting(false)
-            } else {
-                Image(nsImage: AppResources.image("reader-idle"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: readerSize.width, height: readerSize.height)
-                    .position(readerCenter)
-                    .allowsHitTesting(false)
-
-                Image(nsImage: AppResources.image("credit-card"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: cardWidth, height: cardHeight)
-                    .position(cardCenter)
-                    .zIndex(1)
-                    .allowsHitTesting(false)
-
-                Image(nsImage: AppResources.image("reader-slot-front"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: readerSize.width, height: readerSize.height)
-                    .position(readerCenter)
-                    .zIndex(2)
-                    .allowsHitTesting(false)
+            if let player {
+                SwipeVideoPlayerView(player: player)
+                    .frame(width: side, height: side)
+                    .position(x: size.width / 2, y: size.height * 0.46)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -63,42 +21,43 @@ struct GrocerySwipeScene: View {
     }
 }
 
-/// Thin light-grey arrow drawn in the reader’s local frame.
-private struct SwipePathArrow: View {
-    let from: CGPoint
-    let to: CGPoint
+/// AVPlayerLayer hosted in an NSView so the first frame can sit paused until tilt.
+private struct SwipeVideoPlayerView: NSViewRepresentable {
+    let player: AVPlayer
 
-    var body: some View {
-        Canvas { context, _ in
-            var shaft = Path()
-            shaft.move(to: from)
-            shaft.addLine(to: to)
+    func makeNSView(context: Context) -> PlayerContainerView {
+        let view = PlayerContainerView()
+        view.configure(player: player)
+        return view
+    }
 
-            let dx = to.x - from.x
-            let dy = to.y - from.y
-            let len = max(hypot(dx, dy), 1)
-            let ux = dx / len
-            let uy = dy / len
-            let head: CGFloat = 12
-            let wing: CGFloat = 6
-            let px = -uy
-            let py = ux
-            let tip = to
-            let left = CGPoint(x: tip.x - ux * head + px * wing,
-                               y: tip.y - uy * head + py * wing)
-            let right = CGPoint(x: tip.x - ux * head - px * wing,
-                                y: tip.y - uy * head - py * wing)
-            var headPath = Path()
-            headPath.move(to: left)
-            headPath.addLine(to: tip)
-            headPath.addLine(to: right)
+    func updateNSView(_ nsView: PlayerContainerView, context: Context) {
+        nsView.configure(player: player)
+    }
 
-            let color = Color(white: 0.72)
-            context.stroke(shaft, with: .color(color),
-                           style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
-            context.stroke(headPath, with: .color(color),
-                           style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+    final class PlayerContainerView: NSView {
+        private let playerLayer = AVPlayerLayer()
+
+        override init(frame frameRect: NSRect) {
+            super.init(frame: frameRect)
+            wantsLayer = true
+            playerLayer.videoGravity = .resizeAspect
+            layer?.addSublayer(playerLayer)
         }
-        .allowsHitTesting(false)
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        func configure(player: AVPlayer) {
+            if playerLayer.player !== player {
+                playerLayer.player = player
+            }
+        }
+
+        override func layout() {
+            super.layout()
+            playerLayer.frame = bounds
+        }
     }
 }

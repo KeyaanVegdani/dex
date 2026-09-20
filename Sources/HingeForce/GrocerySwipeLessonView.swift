@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Grocery Day step 4: tilt the MacBook down to swipe the card through the reader.
+/// Grocery Day step 4: tilt the MacBook down to play the swipe video, then Finish → Log.
 struct GrocerySwipeLessonView: View {
     @StateObject private var model: GrocerySwipeModel
     @ObservedObject private var accelerometer: Accelerometer
@@ -19,9 +19,10 @@ struct GrocerySwipeLessonView: View {
                        title: GrocerySwipe.title,
                        subtitle: subtitle,
                        subtitleIsProblem: isProblem,
+                       continueTitle: GrocerySwipe.finishTitle,
                        continueStart: GrocerySwipe.continueStart,
                        onContinue: onContinue) { size in
-            GrocerySwipeScene(state: model.scene, size: size)
+            GrocerySwipeScene(state: model.scene, size: size, player: model.player)
         }
         .overlay(alignment: .topTrailing) {
             PillButton(title: "Skip", style: .secondary, action: onContinue)

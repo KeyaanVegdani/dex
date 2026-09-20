@@ -20,4 +20,13 @@ enum AppResources {
         }
         return NSImage(size: NSSize(width: 1, height: 1))
     }
+
+    /// Swipe-to-pay video. Ships `swipe.webm` (Jane’s source); AVFoundation playback uses
+    /// the bundled `swipe.mp4` twin when present, since macOS AVPlayer does not decode WebM.
+    static func swipeVideoURL() -> URL? {
+        if let mp4 = bundle.url(forResource: "swipe", withExtension: "mp4") {
+            return mp4
+        }
+        return bundle.url(forResource: "swipe", withExtension: "webm")
+    }
 }
