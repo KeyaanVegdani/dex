@@ -1,20 +1,20 @@
 import Foundation
 
-/// Grocery Day activity set — parallel scaffold to the cake story (blow → cut → press → wash).
+/// Grocery Day activity set — parallel scaffold to the cake story.
 ///
-/// **Where to plug new activities later**
-/// Replace the body/content of each `Grocery*LessonView` (and its page if needed). Keep the
-/// `RootView` page cases (`groceryLesson` → `groceryCut` → `groceryPress` → `groceryWash` → Log)
-/// and the `onContinue` / `onFinish` callbacks so navigation stays intact.
+/// **Steps**
+/// 1. `GroceryLessonView` — Push the cart (blow → speed). Done.
+/// 2. `GroceryCutLessonView` — placeholder (cake cut); swap later.
+/// 3. `GroceryPressLessonView` — placeholder; swap later.
+/// 4. `GroceryWashLessonView` — placeholder; swap later → Log.
 ///
-/// For now each step reuses the cake lesson’s models, scenes, Theme, and PillButton chrome.
+/// Keep the `RootView` page chain when replacing step bodies.
 enum GroceryActivitySet {
-    /// Ordered steps Jane can swap one-by-one.
     enum Step: Int, CaseIterable {
-        case lesson  // currently: mic blow-out (cake placeholder)
-        case cut     // currently: hinge cut (cake placeholder)
-        case press   // currently: trackpad press (cake placeholder)
-        case wash    // currently: accelerometer wash (cake placeholder)
+        case lesson  // Push the cart
+        case cut
+        case press
+        case wash
     }
 
     static let displayName = "Grocery Day"

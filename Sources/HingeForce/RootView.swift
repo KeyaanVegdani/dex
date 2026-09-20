@@ -27,7 +27,11 @@ struct RootView: View {
             case .home:
                 HomeView(onStartPractice: { go(to: .lesson) },
                          onTest: { go(to: .testing) },
-                         onHistory: { go(to: .history) })
+                         onHistory: { go(to: .history) },
+                         onGrocery: {
+                             groceryRun += 1
+                             go(to: .groceryLesson)
+                         })
                     .transition(.opacity)
             case .testing:
                 BlankPage(title: "Test System") { go(to: .home) }

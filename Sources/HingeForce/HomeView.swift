@@ -9,6 +9,8 @@ struct HomePage: View {
     var onStartPractice: () -> Void = {}
     var onTest: () -> Void = {}
     var onHistory: () -> Void = {}
+    /// Testing shortcut into the Grocery Day activity set.
+    var onGrocery: () -> Void = {}
 
     private static let background = LinearGradient(
         stops: [
@@ -45,6 +47,9 @@ struct HomePage: View {
                     .opacity(HomeMotion.chromeOpacity(at: t))
 
                 testButton(layout)
+                    .opacity(HomeMotion.chromeOpacity(at: t))
+
+                groceryButton(layout)
                     .opacity(HomeMotion.chromeOpacity(at: t))
             }
         }
@@ -139,6 +144,20 @@ struct HomePage: View {
         .buttonStyle(HomePressStyle())
         .position(layout.buttonCenter)
     }
+
+    /// Testing affordance: jump straight into Grocery Day (Push the cart).
+    private func groceryButton(_ layout: HomeLayout) -> some View {
+        Button(action: onGrocery) {
+            Text("Skip to Grocery")
+                .font(.system(size: 22 * layout.unit, weight: .semibold))
+                .foregroundStyle(Theme.pillText)
+                .frame(width: layout.buttonSize.width * 0.92, height: layout.buttonSize.height * 0.9)
+                .background(Theme.pill, in: Capsule())
+        }
+        .buttonStyle(HomePressStyle())
+        .position(x: layout.buttonCenter.x, y: layout.buttonCenter.y - layout.buttonSize.height - 18 * layout.unit)
+        .accessibilityLabel("Skip to Grocery")
+    }
 }
 
 private struct HomePressStyle: ButtonStyle {
@@ -154,6 +173,7 @@ struct HomeView: View {
     let onStartPractice: () -> Void
     let onTest: () -> Void
     let onHistory: () -> Void
+    var onGrocery: () -> Void = {}
 
     @State private var clock = HomeClock()
     @State private var isHoveringBook = false
@@ -169,7 +189,8 @@ struct HomeView: View {
                  },
                  onStartPractice: onStartPractice,
                  onTest: onTest,
-                 onHistory: onHistory)
+                 onHistory: onHistory,
+                 onGrocery: onGrocery)
             .onAppear { startClock() }
             .onDisappear {
                 timer?.invalidate()

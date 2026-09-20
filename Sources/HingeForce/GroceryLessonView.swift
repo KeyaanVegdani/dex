@@ -1,36 +1,39 @@
 import SwiftUI
 
-/// Grocery Day step 1 — placeholder reuses the cake blow-out lesson (same Theme / scaffold / Skip).
-/// Jane: swap `LessonPage` / `CandleScene` for the new Grocery Day activity; keep `onContinue`.
+/// Grocery Day step 1: blow to push the cart down the aisle (top-left → bottom-right).
+/// Jane: later grocery steps plug in after `onContinue`; keep Skip + LessonScaffold chrome.
 struct GroceryLessonView: View {
-    @StateObject private var model: LessonModel
+    @StateObject private var model: GroceryCartModel
     @ObservedObject private var mic: MicMonitor
     private let onContinue: () -> Void
 
     init(mic: MicMonitor, onContinue: @escaping () -> Void) {
         self.mic = mic
         self.onContinue = onContinue
-        _model = StateObject(wrappedValue: LessonModel(mic: mic))
+        _model = StateObject(wrappedValue: GroceryCartModel(mic: mic))
     }
 
     var body: some View {
-        // Same copy & styling as cake for now — replace title/subtitle/scene when Grocery Day is ready.
-        LessonPage(scene: model.scene,
-                   currentSegment: 0,
-                   title: "Make a wish & blow out the candles",
-                   subtitle: subtitle,
-                   subtitleIsProblem: isProblem,
-                   onContinue: onContinue)
-            .overlay(alignment: .topTrailing) {
-                PillButton(title: "Skip", style: .secondary, action: onContinue)
-                    .padding(24)
-            }
-            .overlay(alignment: .bottomLeading) { micReadout.padding(20) }
-            .onAppear { model.start() }
-            .onDisappear {
-                model.stop()
-                mic.stop()
-            }
+        LessonScaffold(currentSegment: 0,
+                       introTime: model.scene.time,
+                       outroElapsed: model.scene.completionElapsed,
+                       title: "Push the cart",
+                       subtitle: subtitle,
+                       subtitleIsProblem: isProblem,
+                       continueStart: GroceryCart.continueStart,
+                       onContinue: onContinue) { size in
+            GroceryCartScene(state: model.scene, size: size)
+        }
+        .overlay(alignment: .topTrailing) {
+            PillButton(title: "Skip", style: .secondary, action: onContinue)
+                .padding(24)
+        }
+        .overlay(alignment: .bottomLeading) { micReadout.padding(20) }
+        .onAppear { model.start() }
+        .onDisappear {
+            model.stop()
+            mic.stop()
+        }
     }
 
     private var micReadout: some View {
@@ -41,7 +44,7 @@ struct GroceryLessonView: View {
 
     private var subtitle: String {
         switch mic.status {
-        case .idle, .listening: return "Blow into the left side of your laptop"
+        case .idle, .listening: return "Blow into the left side of your laptop."
         case .calibrating: return "Getting ready… stay quiet for a moment"
         case .denied: return "Microphone access is off. Allow it in System Settings › Privacy & Security › Microphone."
         case .unavailable(let reason): return reason
