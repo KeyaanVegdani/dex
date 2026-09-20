@@ -13,6 +13,7 @@ enum GroceryTomato {
     static let subtitleSquish = "Tap the tomato with one finger."
     static let titleTooSoft = "Too soft — this tomato’s no good"
     static let titleGood = "That’s a good tomato"
+    static let titleGoodEnough = "That’s good enough"
     static let titleTooHard = "Oops, you broke it"
     static let getAnotherTitle = "Get another tomato"
 
@@ -55,9 +56,5 @@ enum GroceryTomatoPhase: Equatable {
 
     var isBurst: Bool {
         self == .tooSoft || self == .tooHard
-    }
-
-    var needsResetButton: Bool {
-        isBurst
     }
 }

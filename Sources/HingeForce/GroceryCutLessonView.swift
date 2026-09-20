@@ -14,23 +14,21 @@ struct GroceryCutLessonView: View {
 
     var body: some View {
         let phase = model.scene.phase
-        let burst = phase.isBurst
+        let offerReset = model.offersGetAnother
         let good = phase == .good
 
-        // No small PillButton variant exists — keep the standard pill and stack heading above it
-        // with clear spacing so they never overlap (see tomato-button-overlap-bug).
+        // No small PillButton variant — stack heading above the reset pill when offered.
         LessonScaffold(currentSegment: 1,
                        introTime: model.scene.time,
                        outroElapsed: good ? model.scene.completionElapsed : nil,
-                       title: burst ? "" : title(for: phase),
-                       subtitle: burst || good ? "" : GroceryTomato.subtitleSquish,
+                       title: offerReset ? "" : title(for: phase),
+                       subtitle: offerReset || good ? "" : GroceryTomato.subtitleSquish,
                        continueStart: GroceryTomato.continueStart,
                        contentAllowsHits: phase == .squishing,
                        onContinue: onContinue) { size in
             let side = min(size.width * 0.34, size.height * 0.42, 320)
             ZStack {
                 if phase == .squishing {
-                    // Same frame as the tomato art so locationNorm maps 1:1 onto the dent.
                     ForcePad(model: force)
                         .frame(width: side, height: side)
                         .contentShape(Ellipse())
@@ -42,7 +40,7 @@ struct GroceryCutLessonView: View {
             .frame(width: size.width, height: size.height)
         }
         .overlay {
-            if burst {
+            if offerReset {
                 VStack(spacing: 28) {
                     Spacer()
                     Text(title(for: phase))
@@ -72,7 +70,8 @@ struct GroceryCutLessonView: View {
         switch phase {
         case .squishing: return GroceryTomato.titleSquish
         case .tooSoft: return GroceryTomato.titleTooSoft
-        case .good: return GroceryTomato.titleGood
+        case .good:
+            return model.scene.isGoodEnough ? GroceryTomato.titleGoodEnough : GroceryTomato.titleGood
         case .tooHard: return GroceryTomato.titleTooHard
         }
     }
