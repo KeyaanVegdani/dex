@@ -5,7 +5,7 @@ import Foundation
 /// **Steps**
 /// 1. `GroceryLessonView` — Push the cart (blow → speed).
 /// 2. `GroceryCutLessonView` — Gently squish the tomato (Force Touch).
-/// 3. `GroceryPressLessonView` — placeholder; swap later.
+/// 3. `GroceryPressLessonView` — Toss the tomato in the cart (hinge fold).
 /// 4. `GroceryWashLessonView` — placeholder; swap later → Log.
 ///
 /// Keep the `RootView` page chain when replacing step bodies.
@@ -13,7 +13,7 @@ enum GroceryActivitySet {
     enum Step: Int, CaseIterable {
         case lesson  // Push the cart
         case cut     // Squish the tomato
-        case press
+        case press   // Toss into cart
         case wash
     }
 
