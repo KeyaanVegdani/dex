@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Reader back → credit card → slot front. Arrow shares the reader’s frame (aligned overlay).
+/// Reader back → credit card → slot front. Card slides on a fixed 30° path.
 struct GrocerySwipeScene: View {
     let state: GrocerySwipeSceneState
     let size: CGSize
@@ -11,16 +11,14 @@ struct GrocerySwipeScene: View {
         let readerCenter = GrocerySwipe.readerCenter(for: size)
         let cardWidth = readerSize.width * 0.30
         let cardHeight = cardWidth * (322.0 / 236.0)
-        let cardCenter = state.cardPoint
-            ?? GrocerySwipe.cardCenter(progress: state.progress,
-                                       readerCenter: readerCenter,
-                                       readerSize: readerSize)
+        let cardCenter = GrocerySwipe.cardCenter(progress: state.progress,
+                                                 readerCenter: readerCenter,
+                                                 readerSize: readerSize)
         let arrowOpacity = GrocerySwipe.arrowOpacity(progress: state.progress)
         let showThankYou = state.isComplete
         let arrowLocal = GrocerySwipe.arrowEndpointsInReaderFrame(readerSize: readerSize)
 
         ZStack {
-            // Same frame + position as the reader — not a full-scene stretched stroke.
             if !showThankYou {
                 SwipePathArrow(from: arrowLocal.0, to: arrowLocal.1)
                     .frame(width: readerSize.width, height: readerSize.height)
@@ -72,7 +70,7 @@ struct GrocerySwipeScene: View {
     }
 }
 
-/// Thin light-grey arrow drawn in the reader’s local frame (aspect-preserving, not scene-stretched).
+/// Thin light-grey arrow drawn in the reader’s local frame.
 private struct SwipePathArrow: View {
     let from: CGPoint
     let to: CGPoint

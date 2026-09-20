@@ -38,19 +38,19 @@ enum GrocerySwipe {
         CGPoint(x: size.width / 2, y: size.height * 0.46)
     }
 
-    /// Top of the slot — rest pose for the card (storyboards 1–2).
+    /// Fixed start pose: at the top / right of the reader slot (swipe-start-ref).
     static func pathStart(readerCenter: CGPoint, readerSize: CGSize) -> CGPoint {
         CGPoint(
-            x: readerCenter.x + readerSize.width * 0.28,
-            y: readerCenter.y - readerSize.height * 0.12
+            x: readerCenter.x + readerSize.width * 0.34,
+            y: readerCenter.y - readerSize.height * 0.16
         )
     }
 
     static func pathLength(readerSize: CGSize) -> CGFloat {
-        readerSize.height * 0.62
+        readerSize.height * 0.58
     }
 
-    /// Rest / projected pose along the slot (used when not dragging).
+    /// Card center locked to the 30° path at progress `t`.
     static func cardCenter(progress t: Double, readerCenter: CGPoint, readerSize: CGSize) -> CGPoint {
         let u = pathUnit()
         let start = pathStart(readerCenter: readerCenter, readerSize: readerSize)
@@ -62,16 +62,14 @@ enum GrocerySwipe {
         )
     }
 
-    /// Project a scene point onto the swipe path as 0...1 progress (completion / arrow only).
-    static func progress(for point: CGPoint, readerCenter: CGPoint, readerSize: CGSize) -> Double {
+    /// Progress from press origin → current point, projected onto the 30° axis (drag distance only).
+    static func progressFromDrag(from origin: CGPoint, to current: CGPoint, pathLength: CGFloat) -> Double {
+        guard pathLength > 1e-6 else { return 0 }
         let u = pathUnit()
-        let start = pathStart(readerCenter: readerCenter, readerSize: readerSize)
-        let travel = Double(pathLength(readerSize: readerSize))
-        guard travel > 1e-6 else { return 0 }
-        let vx = Double(point.x - start.x)
-        let vy = Double(point.y - start.y)
-        let along = vx * u.dx + vy * u.dy
-        return min(max(along / travel, 0), 1)
+        let dx = Double(current.x - origin.x)
+        let dy = Double(current.y - origin.y)
+        let along = dx * u.dx + dy * u.dy
+        return min(max(along / Double(pathLength), 0), 1)
     }
 
     static func arrowOpacity(progress: Double) -> Double {
@@ -80,11 +78,9 @@ enum GrocerySwipe {
     }
 
     /// Arrow endpoints in **local reader-frame** coordinates (top-left origin, size = readerSize).
-    /// Drawn as an aligned overlay — same frame/position as the reader art, not stretched across the scene.
     static func arrowEndpointsInReaderFrame(readerSize: CGSize) -> (CGPoint, CGPoint) {
         let u = pathUnit()
         let outward = CGVector(dx: u.dy, dy: -u.dx)
-        // Slot sits on the right of the isometric reader; arrow runs beside it inside the frame.
         let origin = CGPoint(
             x: readerSize.width * 0.78 + outward.dx * readerSize.width * 0.02,
             y: readerSize.height * 0.22 + outward.dy * readerSize.width * 0.02
