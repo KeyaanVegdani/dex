@@ -1,27 +1,27 @@
 import AVFoundation
 import SwiftUI
 
-/// Full-bleed / centered swipe video. Paused on load; model starts playback on tilt.
+/// Full-bleed swipe video (aspect-fill). Paused on load; model starts playback on tilt.
 struct GrocerySwipeScene: View {
     let state: GrocerySwipeSceneState
     let size: CGSize
     let player: AVPlayer?
 
     var body: some View {
-        let side = min(size.width * 0.55, size.height * 0.58, 520)
         ZStack {
             if let player {
                 SwipeVideoPlayerView(player: player)
-                    .frame(width: side, height: side)
-                    .position(x: size.width / 2, y: size.height * 0.46)
+                    .frame(width: size.width, height: size.height)
             }
         }
         .frame(width: size.width, height: size.height)
+        .clipped()
+        .ignoresSafeArea()
         .allowsHitTesting(false)
     }
 }
 
-/// AVPlayerLayer hosted in an NSView so the first frame can sit paused until tilt.
+/// AVPlayerLayer hosted in an NSView — aspect-fill so the video covers the whole screen.
 private struct SwipeVideoPlayerView: NSViewRepresentable {
     let player: AVPlayer
 
@@ -41,7 +41,7 @@ private struct SwipeVideoPlayerView: NSViewRepresentable {
         override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
             wantsLayer = true
-            playerLayer.videoGravity = .resizeAspect
+            playerLayer.videoGravity = .resizeAspectFill
             layer?.addSublayer(playerLayer)
         }
 
